@@ -1,0 +1,13 @@
+.venv/
+.cache/
+.env
+__pycache__/
+exports/
+library/stock/
+tools/bin/
+*.wav
+*.mp3
+*.mp4
+*.mov
+projects/*/build/
+projects/*/project.json.bak

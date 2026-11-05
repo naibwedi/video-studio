@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap-sync subtitles</title>
+<style>
+  :root { --bg:#0b1126; --card:#141c3a; --gold:#e9be5c; --ink:#f3ecd8; --dim:#8c93ad; --ok:#4cc38a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: Ebrima, "Noto Sans Ethiopic", system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 20px; color: var(--gold); margin: 0 0 4px; }
+  p.hint { color: var(--dim); margin: 4px 0 14px; font-family: system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button, select, input[type=file] { font: 600 15px system-ui, sans-serif; padding: 10px 16px; border-radius: 10px; border: 0; cursor: pointer; }
+  button.primary { background: var(--gold); color:#1a1405; }
+  button.ghost { background:#222c52; color: var(--ink); }
+  select { background:#222c52; color: var(--ink); }
+  .clock { font: 700 28px ui-monospace, Consolas, monospace; color: var(--gold); min-width: 110px; }
+  .cur { font-size: clamp(30px, 6vw, 54px); font-weight: 700; text-align:center; padding: 26px 8px; color: var(--ink); min-height: 120px; }
+  .next { text-align:center; color: var(--dim); font-size: 22px; min-height: 30px; }
+  #tapbtn { width: 100%; padding: 26px; font-size: 22px; margin-top: 12px; }
+  ol { margin: 0; padding-left: 22px; }
+  li { padding: 6px 4px; border-bottom: 1px solid #222c52; display:flex; justify-content: space-between; gap: 12px; font-size: 18px; }
+  li.done { color: var(--ok); }
+  li.now { color: var(--gold); font-weight: 700; }
+  li span.t { font-family: ui-monospace, Consolas, monospace; font-size: 14px; color: var(--dim); white-space: nowrap; }
+  textarea { width: 100%; height: 160px; background:#0b1126; color: var(--ink); border:1px solid #2a3566; border-radius: 10px; padding: 10px;
+             font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+  .kbd { background:#222c52; padding: 2px 8px; border-radius: 6px; font-family: ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tap-sync subtitles — ጉንዲ ዓይነይ'ዩ</h1>
+  <p class="hint">
+    1) Press <b>Play</b>. 2) Each time a line <b>starts being sung</b>, press <span class="kbd">Space</span> (or the big button).
+    3) If the singing <b>stops</b> before the next line, press <span class="kbd">E</span> to mark the end.
+    <span class="kbd">Backspace</span> = undo last tap. Use <b>0.75×</b> speed for more accurate tapping — the times are saved in real song time.
+    When all lines are tapped, press <b>Download .srt</b> and tell Claude the file is in Downloads.
+  </p>
+
+  <div class="card">
+    <div class="row">
+      <audio id="au" preload="auto" src="gundi_full.wav"></audio>
+      <button class="primary" id="play">▶ Play</button>
+      <button class="ghost" id="restart">↺ Restart</button>
+      <select id="rate"><option value="1">1× speed</option><option value="0.85">0.85×</option><option value="0.75" selected>0.75×</option><option value="0.6">0.6×</option></select>
+      <span class="clock" id="clock">0.00</span>
+      <input type="file" id="pick" accept="audio/*" title="Pick the audio if it did not load automatically">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="next" id="prev"></div>
+    <div class="cur" id="cur">Press Play, then tap when the first line starts</div>
+    <div class="next" id="nxt"></div>
+    <button class="primary" id="tapbtn">TAP — this line starts now (Space)</button>
+  </div>
+
+  <div class="card"><ol id="list"></ol></div>
+
+  <div class="card">
+    <div class="row"><button class="primary" id="dl">⬇ Download .srt</button>
+    <button class="ghost" id="copy">Copy SRT text</button>
+    <button class="ghost" id="reset">Clear all taps</button></div>
+    <p class="hint" style="margin-top:12px">Preview of the file:</p>
+    <textarea id="out" readonly></textarea>
+  </div>
+</main>
+
+<script>
+const LINES = [
+  "ጉንዲ ዓይነይ'ዩ ሰራውር ሰዲዱለይ",
+  "ሰሪቡ ኣበሳይ ጋሪዱ ንውነይ",
+  "ከምቲ ክርዳድ ብኣጋ ከይምሖ",
+  "እቲ ሓሳባተይ ኣይነጽሀን ብኣምሆ",
+  "ዘድክመኒ ኃጢኣት ኣብ ደመይ የስርጾ",
+  "ናኽድመር በደል ስዕረት የናውጾ",
+  "ሓበላ ጉንዲ ዓይነይ ንውሽጢ ሶሊኹ",
+  "ሕዱር ቃንዛይ መዘዝ ዘልዓለም ወሲኹ",
+  "በሰር ካልኦት ይፍትን ክርኢ",
+  "ይህወኽ ይስምብድ ንጥፍኣት የሳሲ",
+  "ከም ትውፊት ክፉኣት ዝቓደረ ዛንታ",
+  "ብሰንኪ ልማደይ ስኢነ መስታ",
+];
+const au = document.getElementById("au");
+const $ = id => document.getElementById(id);
+let starts = [], ends = [];            // seconds in real song time
+
+function fmt(t, srt) { const h=Math.floor(t/3600), m=Math.floor(t%3600/60), s=t%60;
+  const p=(n,l)=>String(n).padStart(l,"0"); const ms=Math.round((s-Math.floor(s))*1000);
+  return srt ? `${p(h,2)}:${p(m,2)}:${p(Math.floor(s),2)},${p(ms,3)}` : `${m}:${s.toFixed(2).padStart(5,"0")}`; }
+
+function srtText() {
+  let out = [];
+  starts.forEach((s, i) => {
+    let e = ends[i] != null ? ends[i] : (starts[i+1] != null ? starts[i+1] - 0.15 : s + 3);
+    if (e <= s) e = s + 0.5;
+    out.push(`${i+1}\n${fmt(s,true)} --> ${fmt(e,true)}\n${LINES[i]}\n`);
+  });
+  return out.join("\n");
+}
+
+function render() {
+  const i = starts.length;
+  $("prev").textContent = i > 0 ? LINES[i-1] : "";
+  $("cur").textContent = i < LINES.length ? LINES[i] : "✔ All lines tapped — download the .srt below";
+  $("nxt").textContent = i+1 < LINES.length ? "next: " + LINES[i+1] : "";
+  $("list").innerHTML = LINES.map((l, k) => `<li class="${k<i?'done':k===i?'now':''}"><div>${l}</div><span class="t">${
+    k<i ? fmt(starts[k]) + (ends[k]!=null ? " → " + fmt(ends[k]) : "") : ""}</span></li>`).join("");
+  $("out").value = srtText();
+}
+
+function tap() {
+  if (starts.length >= LINES.length) return;
+  starts.push(au.currentTime); ends.push(null); render();
+}
+function markEnd() { const i = starts.length - 1; if (i >= 0 && ends[i] == null) { ends[i] = au.currentTime; render(); } }
+function undo() { if (starts.length) { starts.pop(); ends.pop(); render(); } }
+
+$("play").onclick = () => { au.playbackRate = parseFloat($("rate").value); if (au.paused) { au.play(); $("play").textContent = "⏸ Pause"; } else { au.pause(); $("play").textContent = "▶ Play"; } };
+$("restart").onclick = () => { au.currentTime = 0; };
+$("rate").onchange = () => { au.playbackRate = parseFloat($("rate").value); };
+$("tapbtn").onclick = tap;
+$("reset").onclick = () => { starts = []; ends = []; render(); };
+$("pick").onchange = e => { const f = e.target.files[0]; if (f) { au.src = URL.createObjectURL(f); } };
+$("dl").onclick = () => { const b = new Blob([srtText()], {type:"text/plain;charset=utf-8"}); const a = document.createElement("a");
+  a.href = URL.createObjectURL(b); a.download = "gundi_lyrics_tapped.srt"; a.click(); };
+$("copy").onclick = () => navigator.clipboard.writeText(srtText());
+au.addEventListener("timeupdate", () => { $("clock").textContent = au.currentTime.toFixed(2); });
+au.addEventListener("ended", () => { $("play").textContent = "▶ Play"; });
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); tap(); }
+  else if (e.key === "e" || e.key === "E") markEnd();
+  else if (e.key === "Backspace") { e.preventDefault(); undo(); }
+});
+render();
+</script>
+</body>
+</html>
