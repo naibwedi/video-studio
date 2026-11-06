@@ -63,7 +63,7 @@ def segment(p, shot, L, W, H, vertical):
     fps, g = p["fps"], p["grade"]
     src = shot["file"]
     st = os.stat(src)
-    key = hashlib.sha1(json.dumps([SEG_VERSION, src, st.st_size, int(st.st_mtime), shot["start"], round(L, 3), shot["pan"],
+    key = hashlib.sha1(json.dumps([SEG_VERSION, paths.rel(src), st.st_size, int(st.st_mtime), shot["start"], round(L, 3), shot["pan"],
                                    shot["motion"], shot.get("zoom"), W, H, fps, g], sort_keys=True).encode()).hexdigest()[:16]
     out = os.path.join(paths.CACHE, "segments", key + ".mp4")
     if os.path.exists(out):
