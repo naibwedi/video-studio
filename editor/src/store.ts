@@ -21,6 +21,7 @@ interface State {
   clips: Clip[]; jobs: Job[]; toasts: Toast[]; peaks: number[];
   init(): Promise<void>;
   load(name: string): Promise<void>;
+  reloadDoc(pushHistory: boolean): Promise<void>;
   commit(fn: (d: Doc) => Doc): void;
   beginTx(): void; liveEdit(fn: (base: Doc) => Doc): void; endTx(): void;
   undo(): void; redo(): void; save(): Promise<void>;
@@ -61,6 +62,22 @@ export const useStore = create<State>((set, get) => ({
       localStorage.setItem("studio.project", name);
       api<any>(`/api/peaks/${name}`).then(p => { if (get().name === name) set({ peaks: p.peaks }); }).catch(() => {});
     } catch (e: any) { get().toast(e.message, "bad"); }
+  },
+
+  /** Re-read the project from the server after Claude changed it. The pre-change doc goes on the undo stack, so one Ctrl+Z undoes Claude's turn. */
+  async reloadDoc(pushHistory) {
+    const { name, doc, hist, sel } = get(); if (!name) return;
+    try {
+      const d = await api<any>("/api/project/" + name);
+      const next = fromPayload(d);
+      let nsel: Sel = null;
+      if (sel && doc) {
+        const key = sel.kind === "shot" ? "shots" : sel.kind === "line" ? "lines" : null;
+        if (key) { const i = (doc as any)[key].findIndex((x: any) => x.id === sel.id); if (i >= 0 && (next as any)[key][i]) nsel = { kind: sel.kind, id: (next as any)[key][i].id }; }
+        else if (sel.kind === "title" || sel.kind === "end" || sel.kind === "logo") nsel = sel;
+      }
+      set({ doc: next, saved: next, notes: d.notes || [], dirty: false, hist: pushHistory && doc ? [...hist.slice(-80), doc] : hist, fut: [], sel: nsel });
+    } catch { /* keep what we have */ }
   },
 
   commit(fn) {

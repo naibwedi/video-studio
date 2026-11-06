@@ -132,7 +132,7 @@ textarea { resize: vertical; min-height: 60px; font-family: var(--ethiopic); }
 .tag { display: inline-block; background: #080d24; border: 1px solid var(--line); border-radius: 99px; padding: 0 7px; font-size: 11px; color: var(--dim); margin: 2px 3px 2px 0; }
 .thumbBig { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #000; margin-bottom: 8px; }
 .note { display: flex; gap: 8px; padding: 6px 8px; border-radius: 7px; background: #080d24; border: 1px solid var(--line); font-size: 12px; margin-bottom: 6px; } .note svg { color: var(--warn); }
-.rightcol { display: grid; grid-template-rows: minmax(0, 1fr) minmax(190px, 36%); grid-area: insp; min-height: 0; }
+.rightcol { display: grid; grid-template-rows: minmax(130px, 1fr) minmax(290px, 50%); grid-area: insp; min-height: 0; }
 .rightcol .insp { grid-area: auto; }
 
 /* claude panel */
@@ -152,3 +152,33 @@ textarea { resize: vertical; min-height: 60px; font-family: var(--ethiopic); }
 .modal h2 { margin: 0 0 10px; font-size: 16px; }
 kbd { background: #080d24; border: 1px solid var(--line2); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font: 11px var(--mono); }
 .empty-state { display: grid; place-items: center; height: 100%; color: var(--dim); text-align: center; padding: 20px; }
+
+/* claude chat */
+.claude { display: flex; flex-direction: column; min-height: 0; }
+.claude .msgs { display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 94%; padding: 7px 10px; border-radius: 10px; line-height: 1.45; font-size: 12.5px; user-select: text; }
+.bubble.me { align-self: flex-end; background: #2b3568; border: 1px solid var(--line2); }
+.bubble.ai { align-self: flex-start; background: #0f1738; border: 1px solid var(--line); font-family: system-ui, var(--ethiopic); }
+.bubble p { margin: 0 0 6px; } .bubble p:last-child { margin: 0; } .bubble ul { margin: 2px 0 6px; padding-left: 18px; }
+.bubble code { background: #080d24; border-radius: 4px; padding: 0 4px; font: 11.5px var(--mono); }
+.toolcard { align-self: flex-start; max-width: 96%; }
+.toolcard > button { gap: 6px; padding: 2px 8px; height: 24px; font-size: 11.5px; color: var(--dim); border: 1px solid var(--line); border-radius: 99px; background: #0a1030; }
+.toolcard.ok > button svg:first-child { color: var(--ok); } .toolcard.bad > button svg:first-child { color: var(--bad); } .toolcard.run > button { color: var(--gold2); }
+.toolcard pre { margin: 6px 0 0; padding: 8px; background: #060a1c; border: 1px solid var(--line); border-radius: 8px; font: 11px/1.4 var(--mono); white-space: pre-wrap; max-height: 180px; overflow: auto; user-select: text; }
+.toolerr { color: var(--bad); font-size: 11.5px; margin: 3px 0 0 6px; }
+.look { display: block; margin-top: 5px; max-width: 100%; width: 260px; border-radius: 8px; border: 1px solid var(--line2); }
+.sugg { display: flex; flex-direction: column; gap: 6px; }
+.sugg button { justify-content: flex-start; text-align: left; white-space: normal; background: #0f1738; font-size: 12px; padding: 6px 10px; }
+.typing { display: flex; gap: 4px; padding: 4px 8px; } .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); opacity: .4; animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 50% { opacity: 1; transform: translateY(-2px); } }
+.claude .composer textarea { min-height: 32px; max-height: 110px; resize: none; }
+.claude-foot { padding: 4px 10px 8px; font-size: 10.5px; color: var(--dim2); }
+.msgs .note { align-self: stretch; }
+/* while Claude edits, the editing panels are read-only */
+.app.busy .tl, .app.busy .bin, .app.busy .insp { pointer-events: none; }
+.app.busy .tl::after { content: "Claude is editing…"; position: absolute; right: 14px; top: 8px; padding: 2px 12px; border-radius: 99px; background: var(--gold); color: #1a1405; font-weight: 700; font-size: 12px; z-index: 40; animation: blink 1.4s infinite; }
+
+.signin { background: #101846; border: 1px solid var(--gold); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; }
+.signin p { margin: 6px 0; color: var(--dim); } .signin code { background: #080d24; border-radius: 4px; padding: 1px 5px; font: 11px var(--mono); word-break: break-all; user-select: text; }
+.signin .cmd { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0; } .signin .cmd code { flex: 1; padding: 6px 8px; }

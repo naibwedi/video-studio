@@ -116,6 +116,20 @@ def doctor():
     for f in ("popup_h.mov", "popup_v.mov"):
         if not os.path.exists(os.path.join(paths.LIBRARY, "overlays", f)):
             print(f"  info  library/overlays/{f} missing: subscribe pop-ups will be skipped")
+    if "WindowsApps" in sys.executable:
+        print("  FIX   this is the Microsoft Store Python, which hides some folders (Claude Code is invisible to it)   -> recreate .venv with python.org Python 3.12")
+        ok = False
+    try:
+        from . import chat
+        cs = chat.status(True)
+        if not cs["available"]:
+            print("  info  Claude Code not found: the Claude co-editor panel will be unavailable (install the Claude desktop app, or set CLAUDE_BIN in .env)")
+        elif cs["signedIn"]:
+            print(f"  OK    Claude co-editor ready ({cs['auth']})")
+        else:
+            print(f"  info  Claude Code found but not signed in: run  {cs['loginCommand']}  once, or put ANTHROPIC_API_KEY in .env")
+    except Exception as e:
+        print(f"  info  could not check Claude Code: {e}")
     n = len([x for x in os.listdir(paths.STOCK) if x.endswith(".mp4")]) if os.path.isdir(paths.STOCK) else 0
     print(f"  info  {n} stock clips in the library")
     keys = [k for k in ("PIXABAY_API_KEY", "PEXELS_API_KEY") if os.environ.get(k, "").strip() and not os.environ[k].startswith("PASTE")]

@@ -49,8 +49,32 @@ The first launch builds it (needs Node.js 20+, one minute); after that it starts
 - **Inspector:** click anything to edit its numbers and words. With nothing selected it shows the project: title, theme, channel, paste lyrics, add cards and pop-ups.
 - **Render menu:** quick preview, full build, silent video for CapCut, teaser, thumbnails, quality check, CapCut pack. Progress shows next to it;
   click it to see jobs, cancel one, open the folder, or play the latest files.
-- **Claude co-editor:** the panel is in place; connecting Claude (so it can see frames and edit the timeline with you) is the next milestone.
+- **Claude co-editor:** chat with Claude beside the timeline (see below).
 - Shortcuts: press **?** in the editor.
+
+### Claude, your co-editor
+
+The panel on the right is Claude working **inside** your edit. Ask in plain words, with the playhead where you mean:
+
+> "Look at the frame under the playhead and find a better shot." · "Make the cuts in the first verse faster." · "Write a title card and an end card." · "Review the pacing of the whole video."
+
+Claude can **read** the edit, **look at frames** (a frame or a grid of frames, shown in the chat), **search your footage** by what it shows, and **change**
+shots, cuts, clips, lyric lines and times, the title and end cards, pop-ups and the logo, draft a whole new shot list, and start a render.
+While Claude works the timeline is locked ("Claude is editing…") and updates live. **One Ctrl+Z undoes everything Claude did in that turn**;
+Ctrl+Y brings it back. It can only use these editing tools: not your files, not the shell, nothing else on this PC.
+
+**One-time sign-in.** The chat runs Claude Code (installed with the Claude desktop app) as a program on your PC.
+The desktop app signs itself in, but this copy needs its own login once: the panel shows the command; paste it in PowerShell and finish in the browser.
+Prefer an API key? Put `ANTHROPIC_API_KEY=...` in the studio's `.env` (billed per use). Anthropic's rules for using a subscription outside its own apps
+have changed several times, so for anything shared with other people use an API key. `studio doctor` shows the status.
+
+**Python:** use the regular python.org Python (3.12), not the Microsoft Store one: the Store version cannot see where Claude Code is installed.
+`setup.ps1` picks the right one; `studio doctor` warns if it is the Store version.
+
+**Use these tools from any Claude** (for example Claude Code in a terminal): `studio mcp-config` prints the settings, or run
+`claude mcp add studio -- "<python>" "<studio.py>" mcp`. The tools: `get_project`, `look`, `contact_sheet`, `search_clips`, `check_project`,
+`split_shot`, `delete_shot`, `move_cut`, `swap_clip`, `set_shot`, `set_line`, `add_line`, `delete_line`, `shift_lines`, `set_title`, `set_theme`,
+`set_card`, `add_popup`, `remove_popup`, `set_logo`, `draft_shots`, `render`. Indices are 1-based, as the editor shows them.
 
 The earlier form-based dashboard is still available at `http://127.0.0.1:8765/classic` (and the link "Classic" in the top bar).
 The editor's source is in `editor/` (React + TypeScript + Vite). After changing it: `cd editor`, then `npm run build`

@@ -6,6 +6,7 @@ import { MediaBin } from "./components/MediaBin";
 import { Preview } from "./components/Preview";
 import { Timeline } from "./components/Timeline";
 import { TopBar } from "./components/TopBar";
+import { useChat } from "./chat";
 import { deleteShot, splitAt } from "./model";
 import { useStore } from "./store";
 
@@ -17,13 +18,16 @@ const SHORTCUTS: [string, string][] = [
 
 export function App() {
   const [help, setHelp] = useState(false);
-  const toasts = useStore(s => s.toasts), loaded = useStore(s => s.doc !== null);
+  const toasts = useStore(s => s.toasts), loaded = useStore(s => s.doc !== null), name = useStore(s => s.name);
+  const busy = useChat(s => s.running);
 
   useEffect(() => {
     const h = localStorage.getItem("studio.tlh");
     if (h) (document.querySelector(".app") as HTMLElement).style.setProperty("--tlh", h + "px");
     void useStore.getState().init();
   }, []);
+
+  useEffect(() => { void useChat.getState().attach(name); }, [name]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -34,6 +38,8 @@ export function App() {
       if (ctrl && lower === "z" && !typing) { e.preventDefault(); e.shiftKey ? s.redo() : s.undo(); return; }
       if (ctrl && lower === "y" && !typing) { e.preventDefault(); s.redo(); return; }
       if (typing || ctrl || e.altKey || !s.doc) return;
+      const editing = ["s", "c", "Delete", "Backspace"].includes(k) || lower === "s";
+      if (useChat.getState().running && editing) return;     // Claude is editing: no competing edits
       const frame = 1 / 24;
       switch (k) {
         case " ": e.preventDefault(); s.togglePlay(); break;
@@ -71,7 +77,7 @@ export function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className={"app" + (busy ? " busy" : "")}>
       <TopBar />
       <MediaBin />
       <Preview />

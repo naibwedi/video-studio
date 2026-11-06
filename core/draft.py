@@ -145,3 +145,18 @@ def find(words):
     tags = load()
     want = {norm(w) for w in words}
     return [(cid, i) for cid, i in sorted(tags.items()) if want <= {norm(t) for t in i["tags"]}]
+
+
+def search(query, limit=12, faces=False):
+    """Library clips matching the words of `query` (theme words like 'repentance' count too), best first."""
+    tags = load()
+    words = set(expand(query.split()))
+    scored = []
+    for cid, info in tags.items():
+        if not os.path.exists(paths.stock_path(cid)) or (info["people"] == 2 and not faces):
+            continue
+        hit = len(words & {norm(t) for t in info["tags"]})
+        if hit:
+            scored.append((hit + (0.2 if info["people"] == 0 else 0), cid, info))
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    return [{"clip": cid, "tags": info["tags"], "people": info["people"], "seconds": info.get("dur")} for _, cid, info in scored[:limit]]

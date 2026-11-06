@@ -5,7 +5,8 @@ because two renders at once have damaged files before.
 """
 import array, contextlib, io, json, mimetypes, os, queue, re, secrets, subprocess, sys, threading, time, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from . import draft, paths, project, qc, tools
+from . import chat, draft, paths, project, qc, tools
+from .edits import save_project
 
 TOKEN = secrets.token_hex(16)          # the page carries it; other websites cannot know it
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
@@ -182,59 +183,6 @@ def valid_name(n):
     return bool(re.fullmatch(r"[A-Za-z0-9_-]{1,40}", n or ""))
 
 
-def save_project(name, data):
-    def mutate(raw):
-        if "shots" in data:
-            shots = []
-            for s in data["shots"]:
-                at = s["at"]
-                if not (isinstance(at, (int, float)) or re.fullmatch(r"L\d+[mse]?", str(at)) or re.fullmatch(r"\d+(\.\d+)?", str(at))):
-                    raise ValueError(f"bad shot time {at!r}")
-                clip = str(s["clip"])
-                known = re.fullmatch(r"(pb)?\d+", clip) or any(os.path.exists(os.path.join(base, clip)) for base in (project.project_dir(name), paths.ROOT, ""))
-                if not known:
-                    raise ValueError(f"bad clip {clip!r}: not a library number and no such file")
-                shots.append({"at": float(at) if re.fullmatch(r"\d+(\.\d+)?", str(at)) else at, "clip": str(s["clip"]),
-                              "start": float(s.get("start", 0)), "pan": float(s.get("pan", 0.5))})
-            raw["shots"] = shots
-        if "lines" in data:
-            lines = []
-            for ln in data["lines"]:
-                item = {"text": str(ln["text"]), "start": round(float(ln["start"]), 2), "end": round(float(ln["end"]), 2)}
-                if ln.get("keywords"):
-                    item["keywords"] = [str(k) for k in ln["keywords"]]
-                lines.append(item)
-            raw.setdefault("subtitles", {})["lines"] = lines
-        if "title" in data:
-            raw["title"] = str(data["title"])
-        if "channel" in data:
-            raw["channel"] = {"name": str(data["channel"].get("name", "")), "handle": str(data["channel"].get("handle", ""))}
-        if "overlays" in data:
-            ov, new = raw.setdefault("overlays", {}), data["overlays"]
-            num = lambda x: None if x in (None, "") else float(x)
-            if "logo" in new:
-                ov["logo"] = {**ov.get("logo", {"image": "library/brand/logo.jpg"}), "in": num(new["logo"].get("in")), "out": num(new["logo"].get("out"))}
-            for key, fields in (("title_card", ("text", "subtitle")), ("end_card", ("title", "handle", "tagline"))):
-                if key in new:
-                    c = new[key]
-                    if not c:
-                        ov[key] = None
-                    else:
-                        ov[key] = {f: str(c.get(f, "")) for f in fields}
-                        ov[key]["in"] = num(c.get("in")) or 0.0
-                        if key == "title_card":
-                            ov[key]["out"] = num(c.get("out")) or 6.0
-            if "popups" in new:
-                pops = []
-                for e in new["popups"]:
-                    pops.append({"at": float(e["at"]), "dur": float(e.get("dur", 5)), "click": float(e.get("click", 2.6)),
-                                 "tagline": str(e.get("tagline", "Subscribe for more mezmur"))})
-                ov["popups"] = pops
-        if "theme" in data:
-            raw["theme"] = [w for w in re.split(r"[\s,]+", str(data["theme"])) if w] if isinstance(data["theme"], str) else list(data["theme"])
-    project.save_raw(name, mutate)
-
-
 def create_project(name, title, filename, body):
     d = project.project_dir(name)
     if os.path.exists(d):
@@ -321,6 +269,14 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if m := re.fullmatch(r"/assets/([\w.\-]+)", path):
                 return self.send_file(os.path.join(EDITOR_DIST, "assets", m[1]))
+            if path == "/api/chat/status":
+                return self.send_json(chat.status(refresh="refresh" in q))
+            if m := re.fullmatch(r"/api/chat/([\w-]+)", path):
+                sess = chat.get(m[1])
+                since = int(q.get("since", ["0"])[0])
+                return self.send_json({"events": sess.since(since), "running": sess.running, "session": bool(sess.session_id)})
+            if m := re.fullmatch(r"/api/look/([0-9a-f]{16})\.jpg", path):
+                return self.send_file(os.path.join(chat.LOOKS, m[1] + ".jpg"))
             if m := re.fullmatch(r"/api/peaks/([\w-]+)", path):
                 return self.send_json(peaks_for(m[1], int(q.get("n", ["3000"])[0])))
             if m := re.fullmatch(r"/api/strip/((?:pb)?\d+)", path):
@@ -394,6 +350,21 @@ class Handler(BaseHTTPRequestHandler):
             if m := re.fullmatch(r"/api/job/(\d+)/cancel", path):
                 cancel_job(JOBS[int(m[1]) - 1])
                 return self.send_json(job_view(JOBS[int(m[1]) - 1]))
+            if m := re.fullmatch(r"/api/chat/([\w-]+)/(send|stop|reset)", path):
+                name, verb = m[1], m[2]
+                if name not in project_names():
+                    return self.send_json({"error": "unknown project"}, 400)
+                if verb == "send":
+                    d = self.body_json()
+                    msg = str(d.get("message", "")).strip()
+                    if not msg:
+                        return self.send_json({"error": "empty message"}, 400)
+                    chat.send(name, msg[:4000], str(d.get("context", ""))[:600], f"http://127.0.0.1:{self.server.server_address[1]}", TOKEN)
+                elif verb == "stop":
+                    chat.stop(name)
+                else:
+                    chat.reset(name)
+                return self.send_json({"ok": True})
             if path == "/api/open":
                 name = self.body_json().get("project", "")
                 if name in project_names():

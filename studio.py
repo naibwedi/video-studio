@@ -119,6 +119,21 @@ def cmd_ui(a):
     server.serve(a.port, not a.no_open)
 
 
+def cmd_mcp(a):
+    if a.project:
+        os.environ["STUDIO_PROJECT"] = a.project
+    from core import mcp_server
+    mcp_server.serve()
+
+
+def cmd_mcp_config(a):
+    py, script = sys.executable, os.path.join(paths.ROOT, "studio.py")
+    print(json.dumps({"mcpServers": {"studio": {"command": py, "args": [script, "mcp"] + (["--project", a.project] if a.project else [])}}}, indent=2))
+    print()
+    print("For Claude Code, run this once:")
+    print(f'  claude mcp add studio -- "{py}" "{script}" mcp')
+
+
 def cmd_doctor(a):
     tools.doctor()
 
@@ -242,6 +257,14 @@ def main():
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--no-open", action="store_true", help="do not open the browser")
     s.set_defaults(f=cmd_ui)
+
+    s = sub.add_parser("mcp", help="run the MCP server so Claude can edit your videos (used by the editor; also for Claude Code)")
+    s.add_argument("--project", help="tie the session to one video")
+    s.set_defaults(f=cmd_mcp)
+
+    s = sub.add_parser("mcp-config", help="print the MCP settings for Claude Code")
+    s.add_argument("--project")
+    s.set_defaults(f=cmd_mcp_config)
 
     sub.add_parser("doctor", help="check the setup").set_defaults(f=cmd_doctor)
 

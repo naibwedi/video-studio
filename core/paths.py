@@ -2,9 +2,9 @@
 import os, shutil, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECTS = os.path.join(ROOT, "projects")
+PROJECTS = os.environ.get("STUDIO_PROJECTS") or os.path.join(ROOT, "projects")
 LIBRARY = os.path.join(ROOT, "library")
-STOCK = os.path.join(LIBRARY, "stock")
+STOCK = os.environ.get("STUDIO_STOCK") or os.path.join(LIBRARY, "stock")
 EXPORTS = os.path.join(ROOT, "exports")
 CACHE = os.path.join(ROOT, ".cache")
 FONTS_DIR = r"C:\Windows\Fonts"

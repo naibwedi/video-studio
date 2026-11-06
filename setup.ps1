@@ -2,7 +2,14 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-if (-not (Test-Path .venv)) { python -m venv .venv }
+if (-not (Test-Path .venv)) {
+    # Prefer python.org Python: the Microsoft Store one hides some folders (including where Claude Code lives)
+    $py = $null
+    try { $py = (py -3.12 -c "import sys;print(sys.executable)" 2>$null) } catch {}
+    if (-not $py -or $py -match "WindowsApps") { $py = (Get-Command python -ErrorAction Stop).Source }
+    if ($py -match "WindowsApps") { Write-Host "Warning: this is the Microsoft Store Python. Install Python 3.12 from python.org for the Claude co-editor." }
+    & $py -m venv .venv
+}
 .\.venv\Scripts\python.exe -m pip install --quiet -r requirements.txt
 
 New-Item -ItemType Directory -Force tools\bin, library\stock, library\overlays, exports | Out-Null
