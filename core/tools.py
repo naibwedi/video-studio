@@ -81,3 +81,45 @@ def swap(name, at, clip, start=None, pan=None):
         if pan is not None:
             best["pan"] = pan
     project.save_raw(name, mutate)
+
+
+def doctor():
+    """Check the setup and say what to fix."""
+    import shutil as sh
+    ok = True
+
+    def line(good, text, fix=""):
+        nonlocal ok
+        print(("  OK    " if good else "  FIX   ") + text + (f"   -> {fix}" if fix and not good else ""))
+        ok = ok and good
+
+    ff = None
+    try:
+        ff = paths.ffmpeg()
+        ver = subprocess.run([ff, "-version"], capture_output=True, text=True).stdout.splitlines()[0]
+        line(True, ver[:60])
+    except SystemExit:
+        line(False, "ffmpeg", "run setup.ps1, or put ffmpeg.exe in tools\bin")
+    if ff:
+        if render.gpu_ok():
+            print("  OK    GPU encoding on (fast)")
+        else:
+            print("  info  GPU encoding off, using the CPU (works, just slower). To enable: update the NVIDIA driver to 610 or newer")
+    try:
+        import PIL
+        line(True, f"Pillow {PIL.__version__}")
+    except ImportError:
+        line(False, "Pillow", "pip install -r requirements.txt")
+    for f in ("ebrima.ttf", "ebrimabd.ttf", "georgia.ttf"):
+        line(os.path.exists(os.path.join(paths.FONTS_DIR, f)), f"font {f}", "needed for Ge'ez text; comes with Windows 10/11")
+    line(os.path.exists(os.path.join(paths.ROOT, "library", "brand", "logo.jpg")), "logo library/brand/logo.jpg", "add your logo")
+    for f in ("popup_h.mov", "popup_v.mov"):
+        if not os.path.exists(os.path.join(paths.LIBRARY, "overlays", f)):
+            print(f"  info  library/overlays/{f} missing: subscribe pop-ups will be skipped")
+    n = len([x for x in os.listdir(paths.STOCK) if x.endswith(".mp4")]) if os.path.isdir(paths.STOCK) else 0
+    print(f"  info  {n} stock clips in the library")
+    keys = [k for k in ("PIXABAY_API_KEY", "PEXELS_API_KEY") if os.environ.get(k, "").strip() and not os.environ[k].startswith("PASTE")]
+    print("  info  keys set: " + (", ".join(keys) if keys else "none (fine: Claude can find clips for you)"))
+    free = sh.disk_usage(paths.ROOT).free // 2**30
+    line(free >= 5, f"{free} GB free disk", "renders and clips need space")
+    print("\nAll good." if ok else "\nFix the FIX lines above, then run doctor again.")

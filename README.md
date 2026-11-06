@@ -8,6 +8,18 @@ Change the file, build again. Only the parts you changed are re-rendered.
 
 ---
 
+## 0. Setup (first time, or on a new PC)
+
+```
+powershell -ExecutionPolicy Bypass -File setup.ps1
+```
+
+It makes the Python environment, downloads ffmpeg, creates `.env`, and runs `studio doctor`, which checks everything and says what to fix.
+Run `studio doctor` any time something seems off. Tests: `.venv\Scripts\python.exe -m unittest discover tests`.
+
+**Speed:** a first full build takes about 5 minutes, and a rebuild after changing one shot about 3 (use `--preview`, about 1 minute, while experimenting).
+If `studio doctor` says GPU encoding is off, update your NVIDIA driver to version 610 or newer; builds then use the graphics card and get faster.
+
 ## 1. Running it
 
 Open a terminal in this folder and use `studio` (a short name for `python studio.py`):

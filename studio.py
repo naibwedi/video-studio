@@ -82,6 +82,10 @@ def cmd_shots(a):
         print(f"{cuts[i]:7.1f} - {cuts[i + 1]:6.1f}  {s['clip']:>10}  start={s['start']:<5} pan={s['pan']}")
 
 
+def cmd_doctor(a):
+    tools.doctor()
+
+
 def cmd_new(a):
     d = project.project_dir(a.name)
     if os.path.exists(d):
@@ -158,6 +162,8 @@ def main():
     s.add_argument("project")
     s.add_argument("srt")
     s.set_defaults(f=cmd_import_srt)
+
+    sub.add_parser("doctor", help="check the setup").set_defaults(f=cmd_doctor)
 
     s = sub.add_parser("new", help="start a new project from a song")
     s.add_argument("name")

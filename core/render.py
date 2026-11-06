@@ -6,6 +6,7 @@ Two stages, so small edits re-render fast:
 Change one shot -> only that segment is rendered again.
 """
 import hashlib, json, os, subprocess, time
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 from . import overlays, paths
 from .project import SIZES
@@ -13,6 +14,33 @@ from .project import SIZES
 STILL = (".png", ".jpg", ".jpeg", ".webp")
 SEG_VERSION = "1"
 VARIANTS = ("full", "nosubs", "video_only")
+
+
+_GPU = None
+
+
+def gpu_ok():
+    """True if this PC can encode H.264 on the NVIDIA GPU (tested once with a tiny clip). STUDIO_ENCODER=cpu|gpu overrides."""
+    global _GPU
+    forced = os.environ.get("STUDIO_ENCODER", "").lower()
+    if forced in ("cpu", "gpu"):
+        return forced == "gpu"
+    if _GPU is None:
+        r = subprocess.run([paths.ffmpeg(), "-v", "error", "-f", "lavfi", "-i", "color=c=black:s=256x256:d=0.2",
+                            "-c:v", "h264_nvenc", "-f", "null", "-"], capture_output=True, text=True)
+        _GPU = r.returncode == 0
+    return _GPU
+
+
+def vcodec(kind):
+    """Encoder arguments. kind: 'segment' (near lossless, cached), 'final', 'preview'."""
+    if gpu_ok():
+        cq = {"segment": 14, "final": 19, "preview": 30}[kind]
+        return ["-c:v", "h264_nvenc", "-preset", "p5" if kind != "preview" else "p1", "-rc", "vbr", "-cq", str(cq),
+                "-b:v", "0", "-spatial-aq", "1"]
+    cpu = {"segment": ["-preset", "veryfast", "-crf", "14"], "final": ["-preset", os.environ.get("STUDIO_PRESET", "faster"), "-crf", "19"],
+           "preview": ["-preset", "ultrafast", "-crf", "28"]}[kind]
+    return ["-c:v", "libx264"] + cpu
 
 
 def run(args):
@@ -66,8 +94,7 @@ def segment(p, shot, L, W, H, vertical):
               f"y='(ih-oh)*(0.3+0.4*t/{L:.3f})'")
     tmp = out + ".tmp.mp4"
     run(inp + ["-filter_complex", f"{pre}{mv},{grade_filter(g)},format=yuv420p[v]", "-map", "[v]", "-an",
-               "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p", "-r", str(fps),
-               "-t", f"{L:.3f}", paths.rel(tmp)])
+               ] + vcodec("segment") + ["-pix_fmt", "yuv420p", "-r", str(fps), "-t", f"{L:.3f}", paths.rel(tmp)])
     os.replace(tmp, out)
     return out, False
 
@@ -98,11 +125,17 @@ def build(p, size_name, variant="full", preview=False):
     seg_len = [cuts[i + 1] - cuts[i] + (X / 2 if i in (0, n - 1) else X) for i in range(n)] if n > 1 else [dur]
     print(f"{p['_name']} {size_name} {variant}{' (preview)' if preview else ''}: {n} shots, {dur:.1f}s")
 
-    segs = []
-    for i, shot in enumerate(shots):
-        f, cached = segment(p, shot, seg_len[i], W, H, vertical)
-        segs.append(f)
-        print(f"  shot {i + 1:2d}/{n}  {shot['clip']:>10}  {'cached' if cached else 'rendered'}", flush=True)
+    # shots are independent, so render several at once (each goes to its own cache file)
+    workers = max(1, min(int(os.environ.get("STUDIO_WORKERS", 3)), os.cpu_count() or 1))
+    segs = [None] * n
+
+    def one(i):
+        f, cached = segment(p, shots[i], seg_len[i], W, H, vertical)
+        segs[i] = f
+        print(f"  shot {i + 1:2d}/{n}  {shots[i]['clip']:>10}  {'cached' if cached else 'rendered'}", flush=True)
+
+    with ThreadPoolExecutor(workers) as pool:
+        list(pool.map(one, range(n)))
 
     inputs = []
     for f in segs:
@@ -132,7 +165,12 @@ def build(p, size_name, variant="full", preview=False):
     if ov.get("end_card"):
         add_input(loop + [png("end", overlays.make_end)], "end")
     popup_file = os.path.join(paths.LIBRARY, "overlays", f"popup_{sfx}.mov")
-    for k in range(len(ov.get("popups") or [])):
+    popups = ov.get("popups") or []
+    if popups and not os.path.exists(popup_file):
+        print(f"  note: {paths.rel(popup_file)} is missing, so the subscribe pop-ups are skipped")
+        popups = []
+    ov = {**ov, "popups": popups}
+    for k in range(len(popups)):
         add_input(["-i", paths.rel(popup_file)], f"popup{k}")
     with_audio = variant != "video_only"
     if with_audio:
@@ -186,10 +224,10 @@ def build(p, size_name, variant="full", preview=False):
     script = os.path.join(bdir, f"filter_{size_name}_{variant}.txt")
     open(script, "w", encoding="utf-8").write(";\n".join(fx))
     out = output_path(p, size_name, variant, preview)
-    enc = ["-preset", "ultrafast", "-crf", "28"] if preview else ["-preset", "medium", "-crf", "20"]
+    enc = vcodec("preview" if preview else "final")
     audio = ["-map", "[aout]", "-c:a", "aac", "-b:a", "256k"] if with_audio else []
     run(inputs + ["-/filter_complex", paths.rel(script), "-map", "[vout]"] + audio +
-        ["-t", f"{dur:.3f}", "-c:v", "libx264"] + enc + ["-pix_fmt", "yuv420p", "-r", str(fps),
+        ["-t", f"{dur:.3f}"] + enc + ["-pix_fmt", "yuv420p", "-r", str(fps),
                                                        "-movflags", "+faststart", paths.rel(out)])
     print(f"  wrote {paths.rel(out)}  ({time.time() - t0:.0f}s)")
     return out
