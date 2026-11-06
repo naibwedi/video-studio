@@ -114,6 +114,11 @@ def cmd_qc(a):
     sys.exit(0 if qc.run(a.project, a.file) else 1)
 
 
+def cmd_ui(a):
+    from core import server
+    server.serve(a.port, not a.no_open)
+
+
 def cmd_doctor(a):
     tools.doctor()
 
@@ -232,6 +237,11 @@ def main():
     s.add_argument("project")
     s.add_argument("--file", help="video to check (default: exports/<project>/<project>_16x9.mp4)")
     s.set_defaults(f=cmd_qc)
+
+    s = sub.add_parser("ui", help="open the dashboard in your browser (only this PC can see it)")
+    s.add_argument("--port", type=int, default=8765)
+    s.add_argument("--no-open", action="store_true", help="do not open the browser")
+    s.set_defaults(f=cmd_ui)
 
     sub.add_parser("doctor", help="check the setup").set_defaults(f=cmd_doctor)
 

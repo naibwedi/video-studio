@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>video-studio</title>
+<link rel="stylesheet" href="/ui/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand"><span class="mark"><i data-lucide="clapperboard"></i></span><span>video-studio</span></div>
+    <nav id="nav" aria-label="Main"></nav>
+    <div class="side-foot">
+      <button class="ghost wide" id="helpBtn"><i data-lucide="keyboard"></i><span>Shortcuts</span></button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <header class="top" id="top"></header>
+
+    <section class="wavepanel card" id="wavepanel" hidden>
+      <div class="wave-bar">
+        <button class="icon primary" id="playBtn" title="Play / pause (Space)" aria-label="Play or pause"><i data-lucide="play"></i></button>
+        <span class="clock" id="clock">0:00.0</span><span class="dim small" id="clockTotal"></span>
+        <span class="grow"></span>
+        <label class="small dim">speed
+          <select id="rate"><option value="1">1×</option><option value="0.85">0.85×</option><option value="0.75">0.75×</option><option value="0.6">0.6×</option><option value="1.25">1.25×</option></select>
+        </label>
+        <label class="small dim zoom">zoom <input type="range" id="zoom" min="0" max="160" step="5" value="0" aria-label="Waveform zoom"></label>
+      </div>
+      <div id="wave"></div>
+      <div class="legend small dim"><span><i class="sw gold"></i>lyric lines (drag the edges to retime)</span><span><i class="sw shots"></i>shots</span><span>click the waveform to jump</span></div>
+    </section>
+
+    <main id="view" tabindex="-1"></main>
+  </div>
+</div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="/ui/vendor/wavesurfer.min.js"></script>
+<script src="/ui/vendor/regions.min.js"></script>
+<script src="/ui/vendor/Sortable.min.js"></script>
+<script src="/ui/vendor/lucide.min.js"></script>
+<script>const TOKEN = "__TOKEN__";</script>
+<script src="/ui/app.js"></script>
+</body>
+</html>

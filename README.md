@@ -20,6 +20,28 @@ Run `studio doctor` any time something seems off. Tests: `.venv\Scripts\python.e
 **Speed:** a first full build takes about 5 minutes, and a rebuild after changing one shot about 3 (use `--preview`, about 1 minute, while experimenting).
 If `studio doctor` says GPU encoding is off, update your NVIDIA driver to version 610 or newer; builds then use the graphics card and get faster.
 
+## The dashboard (`studio ui`)
+
+A control room in your browser. Double-click **`dashboard.bat`** (or run `studio ui`); it opens `http://127.0.0.1:8765`.
+Only this PC can open it, and it stops when you close the window.
+
+| Tab | What you do there |
+|---|---|
+| **Videos** | See every video; start a new one by choosing a song. |
+| **Shots** | A waveform of the song with your lyric lines (gold) and shots (colours). Draft a shot list, drag a picture to move a clip to another slot, swap clips from the library, cut a shot at the playhead. |
+| **Lyrics** | Paste the lyrics, then **tap-sync**: play the song and press **T** when each line starts. Or drag the gold blocks on the waveform, or type the seconds. Import an .srt, shift all lines. |
+| **Style & cards** | Title, channel name and handle, corner logo timing, the title card, the end card, and the subscribe pop-ups (words and timing). |
+| **Clip library** | Search all clips by tag, watch one, edit its tags (this is what makes the draft pick better). |
+| **Render** | Build previews or full videos, teaser, thumbnails, quality check, CapCut pack. Jobs run one at a time with a progress bar and a Cancel button. |
+| **Files** | Play or download everything that was built; open the folder. |
+| **System** | The setup check and the shortcuts. |
+
+Shortcuts: **Space** play/pause, **Left/Right** jump, **T** tap, **E** end of the last tapped line, **[ ]** set the selected line's start/end,
+**Ctrl+Z / Ctrl+Y** undo/redo, **Ctrl+S** save. Every save keeps the previous version as `project.json.bak`.
+
+Built with [wavesurfer.js](https://wavesurfer.xyz) (waveform and draggable regions), [SortableJS](https://sortablejs.github.io/Sortable/) (drag to reorder)
+and [Lucide](https://lucide.dev) (icons). They are stored in `core/ui/vendor`, so the dashboard works offline. See `THIRD_PARTY.md`.
+
 ## 1. Running it
 
 Open a terminal in this folder and use `studio` (a short name for `python studio.py`):
