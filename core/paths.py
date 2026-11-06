@@ -38,4 +38,6 @@ def rel(path):
 
 
 def stock_path(clip_id):
-    return os.path.join(STOCK, f"p{clip_id}.mp4")
+    """'6988904' -> p6988904.mp4 (Pexels);  'pb12345' -> pb12345.mp4 (Pixabay)."""
+    name = str(clip_id) if str(clip_id).startswith("pb") else f"p{clip_id}"
+    return os.path.join(STOCK, name + ".mp4")

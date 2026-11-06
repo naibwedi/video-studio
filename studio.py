@@ -38,7 +38,7 @@ def cmd_pack(a):
 
 
 def cmd_fetch(a):
-    files = stock.fetch(a.query, a.count, a.orientation)
+    files = stock.fetch(a.query, a.count, a.orientation, a.source)
     out = os.path.join(paths.EXPORTS, "_sheets", a.query.replace(" ", "_") + ".png")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     print("choosing sheet ->", paths.rel(stock.sheet(files, out)))
@@ -124,6 +124,7 @@ def main():
     s.add_argument("query")
     s.add_argument("--count", type=int, default=12)
     s.add_argument("--orientation", default="landscape", choices=["landscape", "portrait", "square"])
+    s.add_argument("--source", default="auto", choices=["auto", "pexels", "pixabay"])
     s.set_defaults(f=cmd_fetch)
 
     s = sub.add_parser("fetch-ids", help="download Pexels clips by id, no key needed (id or id:fps)")

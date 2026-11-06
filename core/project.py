@@ -77,7 +77,7 @@ def resolve_file(p, ref):
 
 def resolve_clip(p, clip):
     """'6988904' -> library/stock/p6988904.mp4, otherwise treat it as a path (video or still image)."""
-    if re.fullmatch(r"\d+", str(clip)):
+    if re.fullmatch(r"(pb)?\d+", str(clip)):
         f = paths.stock_path(clip)
         if not os.path.exists(f):
             sys.exit(f"Stock clip {clip} is not downloaded. Run: python studio.py fetch-ids {clip}:<fps>   (or fetch with a search)")

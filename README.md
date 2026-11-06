@@ -88,28 +88,37 @@ The subtitle times Claude gets from the computer are a draft. To make them exact
 
 ## 5. Getting clips
 
-**With a free Pexels key (recommended):**
+Three ways, easiest first:
+
+**A. Ask Claude (no key, works today).** Tell Claude the theme ("candles, roots, dark water"). Claude searches
+Pexels in the browser, downloads the clips into `library\stock`, and shows you a picture sheet to choose from.
+(Pexels has paused new API keys, so this is the main route for now.)
+
+**B. By clip number.** If you know a clip number (the digits at the end of a Pexels video address):
 
 ```
-studio fetch "tree roots" --count 12
+studio fetch-ids 6988904 855482 --sheet
 ```
 
-This downloads 12 clips into `library\stock` and makes a picture sheet in `exports\_sheets\` so you can choose by number.
+**C. Pixabay search (needs a free key).**
 
-**Without a key:** if you already know a clip number (from the Pexels website address), `studio fetch-ids 6988904 855482 --sheet`.
+```
+studio fetch "tree roots" --count 12 --source pixabay
+```
 
-### Pexels key: setup (2 minutes, free)
+Downloads 12 clips and makes a choosing sheet in `exports\_sheets\`. Pixabay clips are named `pb<number>` (for example `pb12345`)
+and are used in project.json the same way as Pexels numbers.
 
-1. Go to **https://www.pexels.com/api/** and click **Get Started** (log in or sign up; it is free).
-2. Fill the short form if it asks: a name, what you will use it for ("editing videos for my church channel"), and your channel link. Confirm.
-3. The page now shows **Your API Key**: a long line of letters and numbers. Copy it.
-4. In this folder, copy the file `.env.example` and rename the copy to `.env`.
-5. Open `.env` with Notepad and replace `PASTE_YOUR_KEY_HERE` with your key. Save.
-6. Test it: `studio fetch "candle flame" --count 6`.
+### Pixabay key setup (free, 2 minutes)
 
-Keep the key private: it lives only in `.env`, which is never uploaded or committed. Do not paste it in chat.
-Free limits: 200 requests per hour, 20,000 per month. More than enough.
-Pexels videos are free for YouTube, no attribution needed. (The exact button names on their site may differ a little.)
+1. Go to **https://pixabay.com/api/docs/** and log in (or sign up, free).
+2. Once logged in, the documentation page shows your key in the text ("key (required)"). Copy it.
+3. In this folder copy `.env.example` and rename the copy to `.env`.
+4. Open `.env` in Notepad, replace `PASTE_YOUR_KEY_HERE` with your key, save.
+5. Test: `studio fetch "candle flame" --count 6 --source pixabay`.
+
+Keep the key private (only in `.env`, never in chat). Pixabay videos are free to use, no attribution needed.
+(If Pexels opens new keys again: put it on the `PEXELS_API_KEY=` line and `studio fetch "..."` will use it.)
 
 ## 6. Starting a new video
 
@@ -133,7 +142,7 @@ picks and shows you footage to choose from, and builds it.
 
 ## 8. If something goes wrong
 
-- **"Stock clip ... is not downloaded"**: run `studio fetch-ids <number>` or `studio fetch "<search>"`.
+- **"Stock clip ... is not downloaded"**: run `studio fetch-ids <number>` or `studio fetch-ids <number> (or ask Claude to find clips)`.
 - **A render stops with an error**: run the same command again; finished shots are kept.
 - **A video looks damaged**: `studio check <file>`. Never run two builds at the same time on the same project.
 - **Subtitle letters look wrong**: the font must be installed. The default is Ebrima (comes with Windows 10/11).

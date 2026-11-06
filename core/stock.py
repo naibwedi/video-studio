@@ -11,8 +11,8 @@ FPS_GUESS = (25, 30, 24, 50, 60, 29)
 def api_key():
     key = os.environ.get("PEXELS_API_KEY", "")
     if not key or key.startswith("PASTE"):
-        sys.exit("No Pexels key yet. See README.md ('Pexels key') - it takes 2 minutes. "
-                 "Without a key you can still use: python studio.py fetch-ids 6988904:30 ...")
+        sys.exit("No Pexels key (Pexels has paused new keys). Use --source pixabay with a free Pixabay key, "
+                 "or ask Claude to find Pexels clip numbers and use: studio fetch-ids 6988904:30 ...")
     return key
 
 
@@ -46,7 +46,37 @@ def search(query, count=12, orientation="landscape"):
     return api_get(f"https://api.pexels.com/videos/search?{q}")["videos"]
 
 
-def fetch(query, count=12, orientation="landscape"):
+def pixabay_search(query, count=12):
+    key = os.environ.get("PIXABAY_API_KEY", "")
+    if not key or key.startswith("PASTE"):
+        sys.exit("No Pixabay key. Get one free at https://pixabay.com/api/docs/ and put it in .env (see README.md).")
+    q = urllib.parse.urlencode({"key": key, "q": query, "per_page": max(count, 3), "video_type": "film"})
+    req = urllib.request.Request(f"https://pixabay.com/api/videos/?{q}", headers=UA)
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)["hits"][:count]
+
+
+def fetch_pixabay(query, count=12):
+    os.makedirs(paths.STOCK, exist_ok=True)
+    got = []
+    for h in pixabay_search(query, count):
+        v = h["videos"]
+        f = next((v[k] for k in ("large", "medium") if v.get(k, {}).get("url") and v[k]["width"] >= 1280), None)
+        if not f:
+            continue
+        dest = paths.stock_path(f"pb{h['id']}")
+        if not os.path.exists(dest):
+            print(f"  downloading pb{h['id']}  ({h['duration']}s, {f['width']}x{f['height']})", flush=True)
+            download(f["url"], dest)
+        got.append(dest)
+    return got
+
+
+def fetch(query, count=12, orientation="landscape", source="auto"):
+    if source == "auto":
+        source = "pexels" if os.environ.get("PEXELS_API_KEY", "").strip() and not os.environ["PEXELS_API_KEY"].startswith("PASTE") else "pixabay"
+    if source == "pixabay":
+        return fetch_pixabay(query, count)
     os.makedirs(paths.STOCK, exist_ok=True)
     got = []
     for v in search(query, count, orientation):
@@ -108,6 +138,6 @@ def sheet(files, out, cols=5, tw=400, th=225):
         x, y = (i % cols) * tw, (i // cols) * th
         img.paste(Image.open(tmp), (x, y))
         d.rectangle((x, y, x + 150, y + 18), fill="black")
-        d.text((x + 3, y + 3), f"{os.path.basename(f)[1:-4]}  {secs:.0f}s", fill="yellow")
+        d.text((x + 3, y + 3), re.sub(r"^p(?!b)", "", os.path.basename(f)[:-4]) + f"  {secs:.0f}s", fill="yellow")
     img.save(out)
     return out
