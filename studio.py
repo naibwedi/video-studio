@@ -134,6 +134,17 @@ def cmd_mcp_config(a):
     print(f'  claude mcp add studio -- "{py}" "{script}" mcp')
 
 
+def cmd_align(a):
+    from core import align
+    r = align.align(a.project, dry=a.dry, log=lambda m: print(m, flush=True))
+    print()
+    print(f"sung from {r['sung'][0]:.1f}s to {r['sung'][1]:.1f}s, {r['valleys']} quiet gaps found, method: {r['method']}, clarity {r['clarity']:.2f} (1 = very sure, below 0.4 = check by ear)")
+    for i, l in enumerate(r["lines"], 1):
+        o, n = l["old"], l["new"]
+        print(f"{i:2d}  was {o[0]:6.2f}-{o[1]:6.2f}   now {n[0]:6.2f}-{n[1]:6.2f}   {l['text'][:40]}")
+    print("(dry run, nothing written)" if a.dry else "written to the project")
+
+
 def cmd_doctor(a):
     tools.doctor()
 
@@ -265,6 +276,11 @@ def main():
     s = sub.add_parser("mcp-config", help="print the MCP settings for Claude Code")
     s.add_argument("--project")
     s.set_defaults(f=cmd_mcp_config)
+
+    s = sub.add_parser("align", help="time the lyric lines from the singing (separates the voice with demucs; first run downloads a model)")
+    s.add_argument("project")
+    s.add_argument("--dry", action="store_true", help="show the new times without writing them")
+    s.set_defaults(f=cmd_align)
 
     sub.add_parser("doctor", help="check the setup").set_defaults(f=cmd_doctor)
 

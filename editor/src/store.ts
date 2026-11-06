@@ -125,10 +125,15 @@ export const useStore = create<State>((set, get) => ({
   async pollJobs() {
     try {
       const jobs = (await api<Job[]>("/api/jobs")).reverse();
-      const was = get().jobs.some(j => j.status === "running" || j.status === "queued");
+      const prev = get().jobs;
+      const was = prev.some(j => j.status === "running" || j.status === "queued");
       const now = jobs.some(j => j.status === "running" || j.status === "queued");
       set({ jobs });
-      if (was && !now) get().toast("Render finished", "ok");
+      const alignDone = jobs.find(j => j.title.startsWith("align") && j.status === "done" && prev.some(p => p.id === j.id && p.status !== "done"));
+      if (alignDone) {
+        if (get().dirty) get().toast("Lyric times were updated on disk, but you have unsaved changes: save or undo, then reload.", "bad");
+        else { await get().reloadDoc(true); get().toast("Lyric lines re-timed from the singing (Ctrl+Z undoes it)", "ok"); }
+      } else if (was && !now) get().toast("Job finished", "ok");
     } catch { /* server busy */ }
   },
   async runJob(action, opts = {}) {

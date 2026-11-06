@@ -202,3 +202,16 @@ def render(name, action, size="all", preview=True, variant="full"):
     with urllib.request.urlopen(req, timeout=20) as r:
         j = json.load(r)
     return f"Queued: {j['title']} (job {j['id']}). It runs in the background."
+
+
+@tool("auto_time_lyrics", "Re-time every lyric line from the actual singing (separates the voice, then finds where each line is sung). Runs in the background for a few minutes; the editor updates when it finishes. "
+      "It replaces the current line times (the user can undo). Use it when line times look wrong or are only a rough draft.")
+def auto_time_lyrics(name):
+    url, token = os.environ.get("STUDIO_URL"), os.environ.get("STUDIO_TOKEN")
+    if not url or not token:
+        raise ValueError("Start this from the editor's Lyrics section, or run: studio align " + name)
+    req = urllib.request.Request(url + "/api/job", data=json.dumps({"project": name, "action": "align"}).encode(),
+                                 headers={"Content-Type": "application/json", "X-Studio-Token": token})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        j = json.load(r)
+    return f"Started: {j['title']} (job {j['id']}). It takes a few minutes; the lyric times change when it finishes. Call get_project afterwards to see them."

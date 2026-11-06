@@ -52,6 +52,21 @@ The first launch builds it (needs Node.js 20+, one minute); after that it starts
 - **Claude co-editor:** chat with Claude beside the timeline (see below).
 - Shortcuts: press **?** in the editor.
 
+### Exact lyric timing (Auto-time lyrics)
+
+Paste your lyrics, then in the Inspector (nothing selected) press **Auto-time lyrics**, or run `studio align <project>` (add `--dry` to only look).
+It separates the voice from the music (demucs), lets a speech model (Meta's MMS aligner, with the Tigrinya text transliterated by uroman) find where each
+lyric line is sung, then snaps each line's edges to the nearest real breath. A song of two minutes takes about three minutes on the CPU (it runs as a
+background job); the editor updates by itself and **Ctrl+Z undoes it**. The voice is cached, so the next run is faster.
+On Gundi it agreed with the earlier draft times to within half a second on every line. Always check a few lines by ear (click a lyric block, press play).
+`clarity` in the report says how sure it is; chanting or humming that is not in your lyrics is ignored.
+
+One-time install (large: about 2-3 GB with the models, downloaded on first use):
+```
+.venv\Scripts\python.exe -m pip install -r requirements-ai.txt
+```
+`studio doctor` tells you whether it is installed. Claude can start it too (the `auto_time_lyrics` tool).
+
 ### Claude, your co-editor
 
 The panel on the right is Claude working **inside** your edit. Ask in plain words, with the playhead where you mean:

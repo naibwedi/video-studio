@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ClipboardPaste, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { AlertTriangle, ClipboardPaste, Plus, SlidersHorizontal, Trash2, Wand2 } from "lucide-react";
 import { thumbUrl, isLibraryClip } from "../api";
 import { Line, deleteShot, fmtShort, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, uid } from "../model";
 import { useStore } from "../store";
@@ -48,6 +48,10 @@ function ProjectPanel() {
       <div className="row" style={{ flexWrap: "wrap" }}>
         <button onClick={() => setPaste(true)}><ClipboardPaste size={14} /> Paste lyrics</button>
         <button onClick={() => commit(d => { const t = useStore.getState().t; return { ...d, lines: [...d.lines, { id: uid(), text: "New line", start: round2(t), end: round2(Math.min(d.duration, t + 5)) }] }; })}><Plus size={14} /> Line at playhead</button>
+      </div>
+      <div className="row" style={{ marginTop: 8 }}>
+        <button disabled={!doc.lines.length} title="Separates the voice from the music, then finds where each line is sung. Takes a few minutes."
+          onClick={() => { if (confirm("Re-time all lyric lines from the singing? It takes a few minutes. You can undo it with Ctrl+Z afterwards.")) void useStore.getState().runJob("align"); }}><Wand2 size={14} /> Auto-time lyrics</button>
       </div>
       <div className="sect">Cards</div>
       <div className="row" style={{ flexWrap: "wrap" }}>

@@ -127,6 +127,11 @@ def doctor():
             print(f"  info  Claude Code found but not signed in: run  {cs['loginCommand']}  once, or put ANTHROPIC_API_KEY in .env")
     except Exception as e:
         print(f"  info  could not check Claude Code: {e}")
+    try:
+        import demucs, torch, uroman  # noqa: F401
+        print("  OK    exact lyric timing ready (demucs, torch, uroman)")
+    except ImportError as e:
+        print(f"  info  exact lyric timing (studio align) not installed ({e.name}): pip install -r requirements-ai.txt")
     n = len([x for x in os.listdir(paths.STOCK) if x.endswith(".mp4")]) if os.path.isdir(paths.STOCK) else 0
     print(f"  info  {n} stock clips in the library")
     keys = [k for k in ("PIXABAY_API_KEY", "PEXELS_API_KEY") if os.environ.get(k, "").strip() and not os.environ[k].startswith("PASTE")]

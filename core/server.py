@@ -60,6 +60,9 @@ def job_progress(j):
     """0..1 from the build log ('shot 12/32 ...' lines, then the final pass). Rough, but moves."""
     if j["status"] == "done":
         return 1.0
+    if str(j.get("title", "")).startswith("align"):
+        marks = (("wrote", 0.99), ("listening", 0.72), ("loading the speech", 0.55), ("voice separated", 0.45), ("separating", 0.1))
+        return next((p for key, p in marks if any(key in l for l in j["log"])), 0.02 if j["status"] == "running" else 0.0)
     seen = [m for m in (re.search(r"shot\s+(\d+)/(\d+)", l) for l in j["log"]) if m]
     if not seen:
         return 0.02 if j["status"] == "running" else 0.0
@@ -405,6 +408,8 @@ class Handler(BaseHTTPRequestHandler):
                     job = add_job(f"teaser {name} {size}", ["teaser", name, "--size", size] + prev)
                 elif action == "thumb":
                     job = add_job(f"thumbnails {name}", ["thumb", name] + prev)
+                elif action == "align":
+                    job = add_job(f"align lyrics {name}", ["align", name])
                 elif action == "qc":
                     job = add_job(f"quality check {name}", ["qc", name])
                 elif action == "pack":

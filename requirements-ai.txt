@@ -1,0 +1,8 @@
+# Optional: exact lyric timing (studio align). About 2-3 GB with the models.
+torch
+torchaudio
+demucs
+soundfile
+numpy
+scipy
+uroman
