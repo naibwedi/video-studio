@@ -20,7 +20,43 @@ Run `studio doctor` any time something seems off. Tests: `.venv\Scripts\python.e
 **Speed:** a first full build takes about 5 minutes, and a rebuild after changing one shot about 3 (use `--preview`, about 1 minute, while experimenting).
 If `studio doctor` says GPU encoding is off, update your NVIDIA driver to version 610 or newer; builds then use the graphics card and get faster.
 
-## The dashboard (`studio ui`)
+## The editor (`studio ui`, or double-click `dashboard.bat`)
+
+A real timeline editor in your browser, opening your actual video. Only this PC can open it.
+The first launch builds it (needs Node.js 20+, one minute); after that it starts at once.
+
+```
++--------+------------------------+-----------+
+| Media  |   live preview         | Inspector |
+| (clips)|   (plays your clips,   | (selected |
+|        |    lyrics, cards)      |  item)    |
+|        |  |<  <  PLAY  >  >|    | Claude    |
++--------+------------------------+-----------+
+|  ruler   0:00      0:30      1:00      1:30   |
+|  VIDEO   [shot][shot][shot][shot]...          |
+|  LYRICS  [line][line][line]...                |
+|  CARDS   [title]   [subscribe]   [end card]   |
+|  LOGO    [corner logo ------------]           |
+|  MUSIC   waveform                             |
++-----------------------------------------------+
+```
+
+- **Live preview:** plays the real clips with the slow drift, grade, cross-fades, Ge'ez subtitles, logo, title card, end card and the
+  subscribe pop-up, in 16:9 or 9:16. It is close to the final render, not pixel-identical.
+- **Edit on the timeline:** drag the edge of a shot to move a cut (it snaps to the playhead, lyric lines and other cuts), drag the gold
+  lyric blocks to retime them, drag a clip from **Media** onto a shot to replace it, cut with **S** or the razor tool, delete with
+  **Delete**, zoom with **Ctrl + wheel**. **Ctrl+Z / Ctrl+Y** undo and redo anything; Save turns off again when you undo back to the saved state.
+- **Inspector:** click anything to edit its numbers and words. With nothing selected it shows the project: title, theme, channel, paste lyrics, add cards and pop-ups.
+- **Render menu:** quick preview, full build, silent video for CapCut, teaser, thumbnails, quality check, CapCut pack. Progress shows next to it;
+  click it to see jobs, cancel one, open the folder, or play the latest files.
+- **Claude co-editor:** the panel is in place; connecting Claude (so it can see frames and edit the timeline with you) is the next milestone.
+- Shortcuts: press **?** in the editor.
+
+The earlier form-based dashboard is still available at `http://127.0.0.1:8765/classic` (and the link "Classic" in the top bar).
+The editor's source is in `editor/` (React + TypeScript + Vite). After changing it: `cd editor`, then `npm run build`
+(or `npm run dev` for live reloading while `studio ui` is running).
+
+## The classic dashboard (`/classic`)
 
 A control room in your browser. Double-click **`dashboard.bat`** (or run `studio ui`); it opens `http://127.0.0.1:8765`.
 Only this PC can open it, and it stops when you close the window.

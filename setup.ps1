@@ -20,4 +20,14 @@ if (-not (Test-Path tools\bin\ffmpeg.exe)) {
     }
 }
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+
+# the editor (needs Node 20+): install packages and build it once
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+    Push-Location editor
+    npm install --no-audit --no-fund
+    npm run build
+    Pop-Location
+} else {
+    Write-Host "Node.js was not found, so the editor was not built. Install Node 20+ from nodejs.org and run setup.ps1 again."
+}
 .\.venv\Scripts\python.exe studio.py doctor

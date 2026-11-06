@@ -1,0 +1,126 @@
+import { create } from "zustand";
+import { api } from "./api";
+import { Doc, Sel, clamp, fromPayload, toSave } from "./model";
+
+export interface Clip { id: string; tags: string[]; people: number; dur: number | null }
+export interface Job { id: number; title: string; status: string; progress: number; log: string[]; started: number | null; ended: number | null }
+export interface Toast { id: number; msg: string; kind: "ok" | "bad" | "" }
+export type Tool = "select" | "razor";
+
+interface State {
+  projects: { name: string; title: string; duration: number }[];
+  name: string | null;
+  doc: Doc | null;
+  saved: Doc | null;
+  notes: { level: string; text: string }[];
+  dirty: boolean;
+  hist: Doc[]; fut: Doc[]; tx: Doc | null;
+  sel: Sel;
+  t: number; seekId: number; playing: boolean; rate: number;
+  ppx: number; aspect: "16x9" | "9x16"; snap: boolean; tool: Tool; snapLine: number | null;
+  clips: Clip[]; jobs: Job[]; toasts: Toast[]; peaks: number[];
+  init(): Promise<void>;
+  load(name: string): Promise<void>;
+  commit(fn: (d: Doc) => Doc): void;
+  beginTx(): void; liveEdit(fn: (base: Doc) => Doc): void; endTx(): void;
+  undo(): void; redo(): void; save(): Promise<void>;
+  setSel(s: Sel): void;
+  setT(t: number): void; seek(t: number): void; setPlaying(p: boolean): void; togglePlay(): void; setRate(r: number): void;
+  setPpx(p: number): void; setAspect(a: "16x9" | "9x16"): void; setSnap(v: boolean): void; setTool(t: Tool): void; setSnapLine(x: number | null): void;
+  toast(msg: string, kind?: Toast["kind"]): void;
+  pollJobs(): Promise<void>;
+  runJob(action: string, opts?: Record<string, unknown>): Promise<void>;
+}
+
+let toastId = 1;
+export const useStore = create<State>((set, get) => ({
+  projects: [], name: null, doc: null, saved: null, notes: [], dirty: false, hist: [], fut: [], tx: null, sel: null,
+  t: 0, seekId: 0, playing: false, rate: 1, ppx: 14, aspect: "16x9", snap: true, tool: "select", snapLine: null,
+  clips: [], jobs: [], toasts: [], peaks: [],
+
+  async init() {
+    try {
+      const [projects, clips] = await Promise.all([api<any[]>("/api/projects"), api<Clip[]>("/api/clips")]);
+      set({ projects, clips });
+      const last = localStorage.getItem("studio.project");
+      const pick = projects.find(p => p.name === last) || projects[0];
+      if (pick) await get().load(pick.name);
+      void get().pollJobs();
+      setInterval(() => void get().pollJobs(), 2500);
+    } catch (e: any) { get().toast("Could not reach the studio server: " + e.message, "bad"); }
+  },
+
+  async load(name) {
+    if (get().dirty && !confirm("You have unsaved changes. Discard them?")) return;
+    try {
+      const d = await api<any>("/api/project/" + name);
+      const doc = fromPayload(d);
+      const vw = Math.max(600, window.innerWidth - 220);
+      set({ name, doc, saved: doc, notes: d.notes || [], dirty: false, hist: [], fut: [], tx: null, sel: null, t: 0, seekId: get().seekId + 1, playing: false,
+        ppx: clamp(vw / Math.max(10, doc.duration), 2, 200), peaks: [] });
+      localStorage.setItem("studio.project", name);
+      api<any>(`/api/peaks/${name}`).then(p => { if (get().name === name) set({ peaks: p.peaks }); }).catch(() => {});
+    } catch (e: any) { get().toast(e.message, "bad"); }
+  },
+
+  commit(fn) {
+    const { doc, hist } = get(); if (!doc) return;
+    const next = fn(doc); if (next === doc) return;
+    set({ doc: next, hist: [...hist.slice(-80), doc], fut: [], dirty: next !== get().saved });
+  },
+  beginTx() { set({ tx: get().doc }); },
+  liveEdit(fn) { const { tx } = get(); if (tx) { const doc = fn(tx); set({ doc, dirty: doc !== get().saved }); } },
+  endTx() {
+    const { tx, doc, hist } = get();
+    if (tx && doc && doc !== tx) set({ hist: [...hist.slice(-80), tx], fut: [], dirty: doc !== get().saved });
+    set({ tx: null, snapLine: null });
+  },
+  undo() { const { hist, doc, fut } = get(); if (!hist.length || !doc) return; const prev = hist[hist.length - 1]; set({ doc: prev, hist: hist.slice(0, -1), fut: [...fut, doc], dirty: prev !== get().saved }); },
+  redo() { const { hist, doc, fut } = get(); if (!fut.length || !doc) return; const nxt = fut[fut.length - 1]; set({ doc: nxt, fut: fut.slice(0, -1), hist: [...hist, doc], dirty: nxt !== get().saved }); },
+
+  async save() {
+    const { name, doc } = get(); if (!name || !doc) return;
+    try {
+      const d = await api<any>(`/api/project/${name}/save`, toSave(doc));
+      set({ dirty: false, saved: doc, notes: d.notes || [] });
+      get().toast("Saved (the previous version is kept as project.json.bak)", "ok");
+    } catch (e: any) { get().toast("Could not save: " + e.message, "bad"); }
+  },
+
+  setSel(sel) { set({ sel }); },
+  setT(t) { set({ t }); },
+  seek(t) { const d = get().doc; set({ t: clamp(t, 0, d ? d.duration : 1e9), seekId: get().seekId + 1 }); },
+  setPlaying(playing) { set({ playing }); },
+  togglePlay() { set({ playing: !get().playing }); },
+  setRate(rate) { set({ rate }); },
+  setPpx(ppx) { set({ ppx: clamp(ppx, 1.5, 240) }); },
+  setAspect(aspect) { set({ aspect }); },
+  setSnap(snap) { set({ snap }); },
+  setTool(tool) { set({ tool }); },
+  setSnapLine(snapLine) { set({ snapLine }); },
+
+  toast(msg, kind = "") {
+    const id = toastId++;
+    set({ toasts: [...get().toasts, { id, msg, kind }] });
+    setTimeout(() => set({ toasts: get().toasts.filter(t => t.id !== id) }), kind === "bad" ? 7000 : 3200);
+  },
+
+  async pollJobs() {
+    try {
+      const jobs = (await api<Job[]>("/api/jobs")).reverse();
+      const was = get().jobs.some(j => j.status === "running" || j.status === "queued");
+      const now = jobs.some(j => j.status === "running" || j.status === "queued");
+      set({ jobs });
+      if (was && !now) get().toast("Render finished", "ok");
+    } catch { /* server busy */ }
+  },
+  async runJob(action, opts = {}) {
+    const { name } = get(); if (!name) return;
+    if (get().dirty) await get().save();
+    try {
+      const j = await api<Job>("/api/job", { project: name, action, size: "all", variant: "full", preview: true, ...opts });
+      get().toast("Queued: " + j.title, "ok");
+      await get().pollJobs();
+    } catch (e: any) { get().toast(e.message, "bad"); }
+  },
+}));

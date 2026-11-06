@@ -3,13 +3,14 @@
 Pages and API live here; the page itself is core/ui/index.html. Long jobs (renders) go through ONE queue, one at a time,
 because two renders at once have damaged files before.
 """
-import contextlib, io, json, mimetypes, os, queue, re, secrets, subprocess, sys, threading, time, urllib.parse
+import array, contextlib, io, json, mimetypes, os, queue, re, secrets, subprocess, sys, threading, time, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from . import draft, paths, project, qc, tools
 
 TOKEN = secrets.token_hex(16)          # the page carries it; other websites cannot know it
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
 UI = os.path.join(UI_DIR, "index.html")
+EDITOR_DIST = os.path.join(paths.ROOT, "editor", "dist")
 JOBS, JOB_Q, JOB_LOCK = [], queue.Queue(), threading.Lock()
 THUMB_LOCK = threading.Lock()
 PORT = 8765
@@ -142,6 +143,39 @@ def warm_thumbs():
     """Make every library thumbnail once, in the background, so the library opens instantly."""
     for c in clip_list():
         thumb_for(c["id"])
+
+
+def peaks_for(name, buckets=3000):
+    """Loudness envelope of the song (0..100 per bucket) for the timeline waveform. Cached next to the audio's name."""
+    audio = project.load(name)["_audio"]
+    cache = os.path.join(paths.CACHE, "peaks", f"{name}_{buckets}.json")
+    if os.path.exists(cache) and os.path.getmtime(cache) > os.path.getmtime(audio):
+        return json.load(open(cache))
+    raw = subprocess.run([paths.ffmpeg(), "-v", "error", "-i", audio, "-ac", "1", "-ar", "8000", "-f", "s16le", "-"], capture_output=True).stdout
+    samples = array.array("h")
+    samples.frombytes(raw[: len(raw) // 2 * 2])
+    n = max(1, len(samples) // buckets)
+    peaks = [min(100, int(max(map(abs, samples[i * n:(i + 1) * n]), default=0) * 100 / 32768 * 1.15)) for i in range(buckets)]
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    json.dump({"peaks": peaks, "seconds": len(samples) / 8000}, open(cache, "w"))
+    return {"peaks": peaks, "seconds": len(samples) / 8000}
+
+
+def strip_for(cid):
+    """A 768x54 filmstrip (8 frames across the clip) for timeline clips."""
+    src = paths.stock_path(cid)
+    if not os.path.exists(src):
+        return None
+    out = os.path.join(paths.CACHE, "strips", f"{cid}.jpg")
+    lock = _LOCKS.setdefault(out, threading.Lock())
+    with lock:
+        if not os.path.exists(out):
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            from . import stock
+            dur = max(1.0, stock.duration_of(src))
+            subprocess.run([paths.ffmpeg(), "-y", "-loglevel", "error", "-i", src, "-vf",
+                            f"fps={8 / dur:.4f},scale=96:54:force_original_aspect_ratio=increase,crop=96:54,tile=8x1", "-frames:v", "1", "-q:v", "6", out], cwd=paths.ROOT)
+    return out if os.path.exists(out) else None
 
 
 def valid_name(n):
@@ -285,8 +319,17 @@ class Handler(BaseHTTPRequestHandler):
         u = urllib.parse.urlparse(self.path)
         path, q = u.path, urllib.parse.parse_qs(u.query)
         try:
-            if path == "/":
-                html = open(UI, encoding="utf-8").read().replace("__TOKEN__", TOKEN)
+            if m := re.fullmatch(r"/assets/([\w.\-]+)", path):
+                return self.send_file(os.path.join(EDITOR_DIST, "assets", m[1]))
+            if m := re.fullmatch(r"/api/peaks/([\w-]+)", path):
+                return self.send_json(peaks_for(m[1], int(q.get("n", ["3000"])[0])))
+            if m := re.fullmatch(r"/api/strip/((?:pb)?\d+)", path):
+                return self.send_file(strip_for(m[1]))
+            if path == "/api/brand/logo":
+                return self.send_file(os.path.join(paths.ROOT, "library", "brand", "logo.jpg"))
+            if path in ("/", "/classic"):
+                page = os.path.join(EDITOR_DIST, "index.html")
+                html = open(page if path == "/" and os.path.exists(page) else UI, encoding="utf-8").read().replace("__TOKEN__", TOKEN)
                 body = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")

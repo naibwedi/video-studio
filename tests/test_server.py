@@ -26,7 +26,7 @@ class ServerTests(unittest.TestCase):
         cls.srv = ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
         cls.port = cls.srv.server_address[1]
         threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
-        cls.token = re.search(r'const TOKEN = "(\w+)"', cls.call("/")[2].decode())[1]
+        cls.token = re.search(r'const TOKEN = "(\w+)"', cls.call("/classic")[2].decode())[1]
 
     @classmethod
     def tearDownClass(cls):
@@ -51,9 +51,10 @@ class ServerTests(unittest.TestCase):
             return e.code, dict(e.headers), e.read()
 
     def test_page_and_ui_files(self):
-        st, _, body = self.call("/")
-        self.assertEqual(st, 200)
-        self.assertNotIn(b"__TOKEN__", body)
+        for page in ("/", "/classic"):
+            st, _, body = self.call(page)
+            self.assertEqual(st, 200)
+            self.assertNotIn(b"__TOKEN__", body)
         for f in ("app.js", "app.css", "vendor/wavesurfer.min.js", "vendor/Sortable.min.js"):
             self.assertEqual(self.call("/ui/" + f)[0], 200, f)
         self.assertEqual(self.call("/ui/../server.py")[0], 404)
@@ -95,6 +96,23 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(hdr["Content-Range"], "bytes 2-4/10")
         self.assertEqual(self.call("/files/demo/..%2F..%2Fsecret.txt")[0], 403)
         self.assertEqual(self.call("/files/demo/../../secret.txt")[0], 403)
+
+    def test_editor_build_is_served_and_classic_stays(self):
+        d = tempfile.mkdtemp()
+        os.makedirs(os.path.join(d, "assets"))
+        open(os.path.join(d, "index.html"), "w").write('<script>window.STUDIO_TOKEN="__TOKEN__"</script>NEW-EDITOR')
+        open(os.path.join(d, "assets", "a.js"), "w").write("x")
+        old = server.EDITOR_DIST
+        server.EDITOR_DIST = d
+        try:
+            body = self.call("/")[2]
+            self.assertIn(b"NEW-EDITOR", body)
+            self.assertNotIn(b"__TOKEN__", body)
+            self.assertIn(b"/ui/app.js", self.call("/classic")[2])          # the form-based dashboard is still there
+            self.assertEqual(self.call("/assets/a.js")[0], 200)
+            self.assertEqual(self.call("/assets/..%2Findex.html")[0], 404)
+        finally:
+            server.EDITOR_DIST = old
 
     def test_upload_name_rules(self):
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}/api/upload?name=../bad&filename=s.wav", data=b"x", method="POST")

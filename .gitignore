@@ -11,3 +11,5 @@ tools/bin/
 *.mov
 projects/*/build/
 projects/*/project.json.bak
+editor/node_modules/
+editor/dist/
