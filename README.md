@@ -132,6 +132,38 @@ and are used in project.json the same way as Pexels numbers.
 Keep the key private (only in `.env`, never in chat). Pixabay videos are free to use, no attribution needed.
 (If Pexels opens new keys again: put it on the `PEXELS_API_KEY=` line and `studio fetch "..."` will use it.)
 
+## 5b. Make a video fast: draft, thumbnail, teaser, quality check
+
+Every clip in `library\stock` is tagged (what it shows, and whether a person is in it) in `library	ags.json`.
+
+```
+studio new myvideo "C:\path	o\song.wav" --title "My Title"   start a project
+(put the lyric lines with their times into projects\myvideo\project.json)
+studio draft myvideo --theme "repentance candle"               write a first shot list
+studio draft myvideo --dry                                     show the plan without writing
+studio build myvideo --preview                                 watch a fast draft
+studio qc myvideo                                              quality check (see below)
+studio thumb myvideo                                           3 YouTube thumbnails (1280x720)
+studio teaser myvideo                                          ~50 s teaser from the finished video
+```
+
+- **Theme words:** `repentance, sorrow, mourning, prayer, praise, hope, journey, nature, bondage, emptiness, church`, or any tag
+  such as `candle`, `chains`, `roots`, `fog`. Give a lyric line its own words with `"keywords": ["chains", "dark"]`.
+  Faces are avoided by default (silhouettes and hands are fine); `--people` allows faces. `--seed 2` gives a different pick.
+- **Tag new clips:** `studio tag add 123456 "candle dark warm" --people 0` (0 none, 1 silhouette/hands, 2 face). Search: `studio tag find candle church`.
+- **`qc`** checks the lyric lines (overlaps, too long), shots that are too short, pop-ups past the end, and in the rendered video:
+  black frames, long silences, loudness (YouTube likes about -14 LUFS) and clipping.
+- **Teaser:** the default cut is the start of the first verse, two spots further in, and the end card. Choose your own with
+  `--segments "17-31,70-84,110-122"` or `"teaser": {"segments": [[17, 31], [70, 84]]}` in project.json.
+- **Thumbnails** are made from the silent video (`--variant video_only`) so no subtitles show; `--at 20,60` picks the moments,
+  `--text` and `--sub` change the words.
+
+### Subscribe pop-ups
+`"popups": [49, 99]` slides in a card at those seconds, "clicks" SUBSCRIBE, then slides out. For your own words:
+`"popups": [{"at": 49, "tagline": "Subscribe for the full mezmur", "dur": 5, "click": 2.6}]`.
+The channel name and handle come from `"channel"` in project.json (defaults are set for ሰብአ ሰገል).
+`"popup_style": "mov"` brings back the old Remotion video pop-up.
+
 ## 6. Starting a new video
 
 ```
@@ -161,6 +193,4 @@ picks and shows you footage to choose from, and builds it.
 
 ## 9. Not included yet (could be added)
 
-- Changeable text in the animated subscribe pop-ups and end card (they are fixed videos from Remotion, in `library\overlays`).
-  Rebuilding them for a new title means regenerating them with Remotion; ask Claude.
 - Automatic subtitle timing is a rough draft only; tap-sync is the accurate way.

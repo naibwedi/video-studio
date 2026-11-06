@@ -1,12 +1,13 @@
 # Roadmap
 
-Ideas in rough priority order. Tell Claude which one to build next.
+Done in v0.2: `studio draft`, tagged clip library, `studio thumb`, `studio teaser`, `studio qc`, native subscribe pop-ups with any text.
 
-1. **GPU encoding**: built in, switches on automatically once the NVIDIA driver is 610 or newer (`studio doctor` tells you).
-2. **`studio draft`**: from a song + lyrics + theme, write the first shot list automatically (you still choose clips from a sheet).
-3. **`studio thumb`**: YouTube thumbnail from a frame plus the title.
-4. **`studio teaser`**: cut the 1-minute teaser from a full video.
-5. **Changeable subscribe pop-up and end card** (title and handle from project.json) using Remotion or HyperFrames.
-6. **Quality check**: warn about black frames, subtitle overlaps and loudness.
-7. **Better subtitle timing**: keep tap-sync, make it smoother.
-8. **Faster final pass**: join shots in groups, in parallel.
+Next, in rough priority order. Tell Claude which one to build.
+
+1. **Local dashboard** (`studio ui`): projects, a shot board with thumbnails, swap clips by clicking, edit subtitle times, render with progress, play the result.
+2. **YouTube results** (read-only): views, likes, comments next to each project, plus your own notes.
+3. **Publish from the dashboard**: upload with title, description, tags and thumbnail kept in the project.
+4. **GPU encoding**: already built in; switches on once the NVIDIA driver is 610 or newer (`studio doctor` tells you).
+5. **Faster final pass**: join shots in groups, in parallel.
+6. **Better subtitle timing**: keep tap-sync, make it smoother.
+7. **Changeable animated end card** (title and handle from project.json, like the pop-up already is).

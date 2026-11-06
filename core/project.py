@@ -4,6 +4,8 @@ from . import paths
 
 DEFAULTS = {
     "title": "",
+    "channel": {"name": "ሰብአ ሰገል", "handle": "@ሰብአሰገልThemagis"},
+    "theme": [],
     "fps": 24,
     "crossfade": 0.6,
     "sizes": ["16x9", "9x16"],
@@ -20,6 +22,7 @@ DEFAULTS = {
         "title_card": None,
         "end_card": None,
         "popups": [],
+        "popup_style": "native",
     },
     "shots": [],
 }

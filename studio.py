@@ -4,7 +4,7 @@ import argparse, json, os, shutil, sys
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from core import paths, project, render, stock, tools
+from core import draft, paths, project, qc, render, stock, teaser, thumb, tools
 
 paths.load_env()
 
@@ -80,6 +80,38 @@ def cmd_shots(a):
     cuts = [s["at"] for s in p["_shots"]] + [p["duration"]]
     for i, s in enumerate(p["_shots"]):
         print(f"{cuts[i]:7.1f} - {cuts[i + 1]:6.1f}  {s['clip']:>10}  start={s['start']:<5} pan={s['pan']}")
+
+
+def cmd_draft(a):
+    draft.draft(a.project, per_line=a.per_line, max_people=2 if a.people else 1, intro=a.intro, outro=a.outro,
+                theme=a.theme, seed=a.seed, dry=a.dry)
+
+
+def cmd_tag(a):
+    if a.action == "add":
+        info = draft.add_tag(a.id, " ".join(a.words), people=a.people)
+        print(f"{a.id}: people={info['people']} tags={' '.join(info['tags'])}")
+    else:
+        for cid, info in draft.find(([a.id] if a.id else []) + (a.words or [])):
+            print(f"{cid:>10}  people={info['people']}  {' '.join(info['tags'])}")
+
+
+def cmd_thumb(a):
+    p = project.load(a.project)
+    times = [float(t) for t in a.at.split(",")] if a.at else None
+    thumb.run(p, times, a.text, a.sub, a.preview)
+
+
+def cmd_teaser(a):
+    p = project.load(a.project)
+    segs = teaser.parse_segments(a.segments) if a.segments else None
+    for size in sizes_for(p, a.size):
+        out = teaser.build(p, size, segs, a.preview)
+        tools.check(out)
+
+
+def cmd_qc(a):
+    sys.exit(0 if qc.run(a.project, a.file) else 1)
 
 
 def cmd_doctor(a):
@@ -162,6 +194,44 @@ def main():
     s.add_argument("project")
     s.add_argument("srt")
     s.set_defaults(f=cmd_import_srt)
+
+    s = sub.add_parser("draft", help="write a first shot list from the lyric lines and the tagged clip library")
+    s.add_argument("project")
+    s.add_argument("--theme", help='words such as "repentance candle rain" (or set "theme" in project.json)')
+    s.add_argument("--per-line", type=int, default=2, choices=[1, 2, 3])
+    s.add_argument("--intro", type=int, default=3, help="shots before the first lyric line")
+    s.add_argument("--outro", type=int, default=3, help="shots after the last lyric line")
+    s.add_argument("--people", action="store_true", help="allow clips with visible faces")
+    s.add_argument("--seed", type=int, default=0, help="change for a different pick")
+    s.add_argument("--dry", action="store_true", help="show the plan, write nothing")
+    s.set_defaults(f=cmd_draft)
+
+    s = sub.add_parser("tag", help="tag library clips:  tag add 123 \"candle dark\" --people 0   |   tag find candle")
+    s.add_argument("action", choices=["add", "find"])
+    s.add_argument("id", nargs="?")
+    s.add_argument("words", nargs="*")
+    s.add_argument("--people", type=int, default=0, choices=[0, 1, 2])
+    s.set_defaults(f=cmd_tag)
+
+    s = sub.add_parser("thumb", help="YouTube thumbnails (1280x720) from the finished video")
+    s.add_argument("project")
+    s.add_argument("--at", help="seconds, comma separated (default: three spots)")
+    s.add_argument("--text")
+    s.add_argument("--sub")
+    s.add_argument("--preview", action="store_true")
+    s.set_defaults(f=cmd_thumb)
+
+    s = sub.add_parser("teaser", help="cut a ~50 s teaser from the finished video")
+    s.add_argument("project")
+    s.add_argument("--size", choices=["16x9", "9x16", "all"], default="all")
+    s.add_argument("--segments", help='e.g. "17-31,70-84,110-122"')
+    s.add_argument("--preview", action="store_true")
+    s.set_defaults(f=cmd_teaser)
+
+    s = sub.add_parser("qc", help="quality check: lyric timing, shots, black frames, silence, loudness")
+    s.add_argument("project")
+    s.add_argument("--file", help="video to check (default: exports/<project>/<project>_16x9.mp4)")
+    s.set_defaults(f=cmd_qc)
 
     sub.add_parser("doctor", help="check the setup").set_defaults(f=cmd_doctor)
 

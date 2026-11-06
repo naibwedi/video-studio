@@ -8,7 +8,7 @@ Change one shot -> only that segment is rendered again.
 import hashlib, json, os, subprocess, time
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
-from . import overlays, paths
+from . import overlays, paths, popup as popmod
 from .project import SIZES
 
 STILL = (".png", ".jpg", ".jpeg", ".webp")
@@ -164,14 +164,25 @@ def build(p, size_name, variant="full", preview=False):
         add_input(loop + [png("title", overlays.make_title)], "title")
     if ov.get("end_card"):
         add_input(loop + [png("end", overlays.make_end)], "end")
-    popup_file = os.path.join(paths.LIBRARY, "overlays", f"popup_{sfx}.mov")
     popups = ov.get("popups") or []
-    if popups and not os.path.exists(popup_file):
+    native = ov.get("popup_style", "native") == "native"
+    popup_file = os.path.join(paths.LIBRARY, "overlays", f"popup_{sfx}.mov")
+    if popups and not native and not os.path.exists(popup_file):
         print(f"  note: {paths.rel(popup_file)} is missing, so the subscribe pop-ups are skipped")
         popups = []
     ov = {**ov, "popups": popups}
-    for k in range(len(popups)):
-        add_input(["-i", paths.rel(popup_file)], f"popup{k}")
+    pop_cards = []
+    if native:
+        scale = W / W0
+        for k, cfg in enumerate(popmod.normalize(p, popups)):
+            a, b, cw, ch, x1, y = popmod.make(p, cfg, bdir, f"{size_name}{k}", vertical, W0, H0, scale)
+            ia, ib = nxt, nxt + 1
+            add_input(["-loop", "1", "-t", f"{dur:.3f}", "-i", paths.rel(a)], f"pa{k}")
+            add_input(["-loop", "1", "-t", f"{dur:.3f}", "-i", paths.rel(b)], f"pb{k}")
+            pop_cards.append((k, cfg, cw, x1, y))
+    else:
+        for k in range(len(popups)):
+            add_input(["-i", paths.rel(popup_file)], f"popup{k}")
     with_audio = variant != "video_only"
     if with_audio:
         add_input(["-i", paths.rel(p["_audio"])], "audio")
@@ -199,14 +210,25 @@ def build(p, size_name, variant="full", preview=False):
         c = ov["end_card"]
         fx.append(f"[{idx['end']}:v]format=rgba,fade=t=in:st={c['in']}:d=1.8:alpha=1[en]")
         layers.append("en")
-    for k, start in enumerate(ov.get("popups") or []):
+    for k, start in enumerate([] if native else popups):
         fx.append(f"[{idx[f'popup{k}']}:v]format=rgba{',scale=%d:%d' % (W, H) if preview else ''},setpts=PTS+{start}/TB[pp{k}]")
         layers.append(f"pp{k}")
+    native_layers = []
+    for k, cfg, cw, x1, y in pop_cards:
+        pa0, pa1 = cfg["at"], cfg["at"] + cfg["dur"]
+        xe = popmod.x_expr(pa0, pa1, cw, x1)
+        native_layers.append((f"[{idx[f'pa{k}']}:v]", xe, y, f"between(t,{pa0},{pa0 + cfg['click']})"))
+        native_layers.append((f"[{idx[f'pb{k}']}:v]", xe, y, f"between(t,{pa0 + cfg['click']},{pa1})"))
     cur = prev
     for j, lay in enumerate(layers):
         nm = f"[o{j}]"
         extra = ":eof_action=pass" if lay.startswith("pp") else ""
         fx.append(f"{cur}[{lay}]overlay=0:0:format=auto{extra}{nm}")
+        cur = nm
+
+    for src, xe, y, en in native_layers:
+        nm = f"[o{len(layers) + native_layers.index((src, xe, y, en))}]"
+        fx.append(f"{cur}{src}overlay=x='{xe}':y={y}:enable='{en}':eval=frame:format=auto{nm}")
         cur = nm
 
     subs_on = variant == "full" and p["subtitles"]["enabled"] and p["subtitles"]["lines"]
