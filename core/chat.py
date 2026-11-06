@@ -26,18 +26,24 @@ EVENT_CAP = 600
 
 
 def find_claude():
+    """The Claude Code program. The Claude desktop app is a Microsoft Store app: it shows its files at %APPDATA%\\Claude only to its own
+    processes, so we look in the real package folder (visible to everyone) first."""
     env = os.environ.get("CLAUDE_BIN")
     if env and os.path.exists(env):
         return env
     found = shutil.which("claude")
     if found:
         return found
-    cands = glob.glob(os.path.join(os.environ.get("APPDATA", ""), "Claude", "claude-code", "*", "*", "claude.exe"))
+    local, roaming = os.environ.get("LOCALAPPDATA", ""), os.environ.get("APPDATA", "")
+    pats = [(os.path.join(local, "Packages", "Claude_*", "LocalCache", "Roaming", "Claude", "claude-code", "*", "*", "claude.exe"), 1),
+            (os.path.join(roaming, "Claude", "claude-code", "*", "*", "claude.exe"), 0)]
+    cands = [(p, pref) for pat, pref in pats for p in glob.glob(pat)]
 
-    def ver(p):
+    def key(item):
+        p, pref = item
         v = os.path.basename(os.path.dirname(os.path.dirname(p)))
-        return tuple(int(x) if x.isdigit() else 0 for x in v.split("."))
-    return max(cands, key=ver) if cands else None
+        return (tuple(int(x) if x.isdigit() else 0 for x in v.split(".")), pref)
+    return max(cands, key=key)[0] if cands else None
 
 
 _AUTH = {"t": 0.0, "v": None}

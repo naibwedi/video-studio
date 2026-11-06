@@ -148,6 +148,16 @@ class ChatTests(Base):
             time.sleep(0.1)
         return sess
 
+    def test_claude_is_found_in_the_store_package_folder(self):
+        from unittest import mock
+        root = tempfile.mkdtemp()
+        exe = os.path.join(root, "Packages", "Claude_abc", "LocalCache", "Roaming", "Claude", "claude-code", "9.9.9", "hash", "claude.exe")
+        os.makedirs(os.path.dirname(exe))
+        open(exe, "w").close()
+        with mock.patch.dict(os.environ, {"LOCALAPPDATA": root, "APPDATA": os.path.join(root, "Roaming")}), mock.patch("core.chat.shutil.which", return_value=None):
+            os.environ.pop("CLAUDE_BIN", None)
+            self.assertEqual(chat.find_claude(), exe)
+
     def test_a_whole_turn_with_the_stand_in(self):
         name = self.make()
         try:

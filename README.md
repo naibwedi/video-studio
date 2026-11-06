@@ -68,8 +68,8 @@ The desktop app signs itself in, but this copy needs its own login once: the pan
 Prefer an API key? Put `ANTHROPIC_API_KEY=...` in the studio's `.env` (billed per use). Anthropic's rules for using a subscription outside its own apps
 have changed several times, so for anything shared with other people use an API key. `studio doctor` shows the status.
 
-**Python:** use the regular python.org Python (3.12), not the Microsoft Store one: the Store version cannot see where Claude Code is installed.
-`setup.ps1` picks the right one; `studio doctor` warns if it is the Store version.
+**Where Claude Code lives:** the Claude desktop app is a Microsoft Store app, so its files show at `%APPDATA%\Claude` only to the app's own programs.
+Your terminal and this studio find it in the real package folder (`%LOCALAPPDATA%\Packages\Claude_...\LocalCache\Roaming\Claude\claude-code`). The sign-in command in the panel already uses that path.
 
 **Use these tools from any Claude** (for example Claude Code in a terminal): `studio mcp-config` prints the settings, or run
 `claude mcp add studio -- "<python>" "<studio.py>" mcp`. The tools: `get_project`, `look`, `contact_sheet`, `search_clips`, `check_project`,

@@ -116,9 +116,6 @@ def doctor():
     for f in ("popup_h.mov", "popup_v.mov"):
         if not os.path.exists(os.path.join(paths.LIBRARY, "overlays", f)):
             print(f"  info  library/overlays/{f} missing: subscribe pop-ups will be skipped")
-    if "WindowsApps" in sys.executable:
-        print("  FIX   this is the Microsoft Store Python, which hides some folders (Claude Code is invisible to it)   -> recreate .venv with python.org Python 3.12")
-        ok = False
     try:
         from . import chat
         cs = chat.status(True)
