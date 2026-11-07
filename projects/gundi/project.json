@@ -10,65 +10,75 @@
   "lines": [
    {
     "text": "ጉንዲ ዓይነይ'ዩ ሰራውር ሰዲዱለይ",
-    "start": 17.02,
-    "end": 23.4
+    "start": 16.9,
+    "end": 23.46
    },
    {
     "text": "ሰሪቡ ኣበሳይ ጋሪዱ ንውነይ",
-    "start": 24.74,
-    "end": 31.11
+    "start": 24.62,
+    "end": 31.58
    },
    {
     "text": "ከምቲ ክርዳድ ብኣጋ ከይምሖ",
-    "start": 32.27,
-    "end": 38.27
+    "start": 31.92,
+    "end": 38.0
    },
    {
     "text": "እቲ ሓሳባተይ ኣይነጽሀን ብኣምሆ",
-    "start": 39.85,
-    "end": 45.79
+    "start": 39.42,
+    "end": 45.54
    },
    {
     "text": "ዘድክመኒ ኃጢኣት ኣብ ደመይ የስርጾ",
-    "start": 48.27,
-    "end": 54.13
+    "start": 48.32,
+    "end": 53.76
    },
    {
-    "text": "ናኽድመር በደል ስዕረት የናውጾ",
-    "start": 55.47,
-    "end": 61.37
+    "text": "ና ኽድመር በደል ስዕረት የናውጾ",
+    "start": 55.82,
+    "end": 61.12
    },
    {
     "text": "ሓበላ ጉንዲ ዓይነይ ንውሽጢ ሶሊኹ",
-    "start": 62.85,
-    "end": 68.71
+    "start": 62.6,
+    "end": 68.48
    },
    {
     "text": "ሕዱር ቃንዛይ መዘዝ ዘልዓለም ወሲኹ",
-    "start": 70.09,
-    "end": 75.91
+    "start": 70.16,
+    "end": 75.64
    },
    {
     "text": "በሰር ካልኦት ይፍትን ክርኢ",
     "start": 77.09,
-    "end": 83.31
+    "end": 83.66
    },
    {
     "text": "ይህወኽ ይስምብድ ንጥፍኣት የሳሲ",
-    "start": 84.59,
-    "end": 90.25
+    "start": 84.56,
+    "end": 89.96
    },
    {
     "text": "ከም ትውፊት ክፉኣት ዝቓደረ ዛንታ",
-    "start": 90.97,
-    "end": 97.62
+    "start": 91.06,
+    "end": 97.18
    },
    {
     "text": "ብሰንኪ ልማደይ ስኢነ መስታ",
     "start": 98.46,
-    "end": 104.76
+    "end": 104.5
    }
-  ]
+  ],
+  "style": {
+   "preset": "gold",
+   "color": "#F5EBD0",
+   "active": "#E9BE5C",
+   "outline": 3.0,
+   "outline_color": "#000000",
+   "scale": 1.0,
+   "position": "bottom",
+   "karaoke": true
+  }
  },
  "overlays": {
   "logo": {
@@ -90,63 +100,73 @@
    "in": 106.5
   },
   "popups": [
-   49.0,
-   99.0
+   {
+    "at": 49.0,
+    "dur": 5.0,
+    "click": 2.6,
+    "tagline": "Subscribe for more mezmur"
+   },
+   {
+    "at": 99.0,
+    "dur": 5.0,
+    "click": 2.6,
+    "tagline": "Subscribe for more mezmur"
+   }
   ]
  },
  "shots": [
   {
    "at": 0.0,
    "clip": "6960054",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 4.3,
    "clip": "11349556",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.5
   },
   {
    "at": 8.6,
    "clip": "6062828",
-   "start": 4,
+   "start": 4.0,
    "pan": 0.5
   },
   {
    "at": 12.8,
    "clip": "11514996",
-   "start": 20,
+   "start": 20.0,
    "pan": 0.5
   },
   {
    "at": 17.0,
    "clip": "6988904",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 20.9,
    "clip": "9682792",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.5
   },
   {
    "at": 24.7,
    "clip": "12797959",
-   "start": 5,
+   "start": 5.0,
    "pan": 0.5
   },
   {
    "at": 28.5,
    "clip": "1575764",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.5
   },
   {
    "at": 32.3,
    "clip": "12992124",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
@@ -158,134 +178,139 @@
   {
    "at": 39.9,
    "clip": "6554123",
-   "start": 4,
+   "start": 4.0,
    "pan": 0.5
   },
   {
    "at": 43.8,
    "clip": "4836220",
-   "start": 1,
+   "start": 1.0,
    "pan": 0.5
   },
   {
    "at": 48.3,
    "clip": "8239246",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.5
   },
   {
    "at": 51.9,
    "clip": "8239245",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 55.5,
    "clip": "5698954",
-   "start": 1,
+   "start": 1.0,
    "pan": 0.5
   },
   {
    "at": 59.1,
    "clip": "15161525",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 62.9,
    "clip": "8677058",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.5
   },
   {
    "at": 66.5,
    "clip": "14090582",
-   "start": 10,
+   "start": 10.0,
    "pan": 0.45
   },
   {
    "at": 70.1,
    "clip": "8164238",
-   "start": 1,
+   "start": 1.0,
    "pan": 0.5
   },
   {
    "at": 73.6,
    "clip": "4458845",
-   "start": 1,
+   "start": 1.0,
    "pan": 0.6
   },
   {
    "at": 77.1,
    "clip": "5739693",
-   "start": 1,
+   "start": 1.0,
    "pan": 0.8
   },
   {
    "at": 80.8,
    "clip": "4208103",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.62
   },
   {
    "at": 84.6,
    "clip": "3999371",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.55
   },
   {
    "at": 87.8,
    "clip": "4066277",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 91.0,
    "clip": "5423425",
-   "start": 5,
+   "start": 5.0,
    "pan": 0.5
   },
   {
    "at": 94.7,
    "clip": "5423432",
-   "start": 5,
+   "start": 5.0,
    "pan": 0.5
   },
   {
    "at": 98.5,
    "clip": "7033774",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 101.8,
    "clip": "6962391",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.5
   },
   {
    "at": 105.0,
    "clip": "6032544",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   },
   {
    "at": 109.0,
    "clip": "8720691",
-   "start": 2,
+   "start": 2.0,
    "pan": 0.62
   },
   {
    "at": 113.0,
    "clip": "6655122",
-   "start": 1,
+   "start": 1.0,
    "pan": 0.72
   },
   {
    "at": 117.5,
    "clip": "6327827",
-   "start": 3,
+   "start": 3.0,
    "pan": 0.5
   }
- ]
+ ],
+ "channel": {
+  "name": "ሰብአ ሰገል",
+  "handle": "@ሰብአሰገልThemagis"
+ },
+ "theme": []
 }
