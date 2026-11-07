@@ -5,14 +5,14 @@ import { useStore } from "./store";
 
 export interface ChatEvent {
   n: number;
-  type: "user" | "text" | "tool" | "tool_result" | "changed" | "done";
+  type: "user" | "text" | "delta" | "tool" | "tool_result" | "changed" | "done";
   text?: string; id?: string; name?: string; input?: Record<string, unknown>; error?: boolean; images?: string[]; ok?: boolean; turns?: number;
 }
 interface Status { available: boolean; signedIn: boolean; auth: string; path: string | null; loginCommand: string | null }
 
 interface ChatState {
   project: string | null;
-  events: ChatEvent[]; since: number; running: boolean; status: Status | null; pushed: boolean; timer: number | null;
+  events: ChatEvent[]; live: string; since: number; running: boolean; status: Status | null; pushed: boolean; timer: number | null;
   attach(name: string | null): Promise<void>;
   refreshStatus(): Promise<void>;
   send(text: string): Promise<void>;
@@ -36,11 +36,11 @@ export function editorContext(): string {
 }
 
 export const useChat = create<ChatState>((set, get) => ({
-  project: null, events: [], since: 0, running: false, status: null, pushed: false, timer: null,
+  project: null, events: [], live: "", since: 0, running: false, status: null, pushed: false, timer: null,
 
   async attach(name) {
     if (get().timer) clearInterval(get().timer!);
-    set({ project: name, events: [], since: 0, running: false, timer: null, pushed: false });
+    set({ project: name, events: [], live: "", since: 0, running: false, timer: null, pushed: false });
     if (!name) return;
     try { set({ status: await api<Status>("/api/chat/status") }); } catch { /* ignore */ }
     await get().poll();
@@ -55,12 +55,16 @@ export const useChat = create<ChatState>((set, get) => ({
       const r = await api<{ events: ChatEvent[]; running: boolean }>(`/api/chat/${project}?since=${since}`);
       if (get().project !== project) return;
       const evs = r.events;
-      if (evs.length) set({ events: [...get().events, ...evs].slice(-400), since: evs[evs.length - 1].n });
+      if (evs.length) {
+        let live = get().live;                                             // text Claude is writing right now
+        for (const e of evs) { if (e.type === "delta") live += e.text ?? ""; else if (e.type === "text" || e.type === "tool" || e.type === "done") live = ""; }
+        set({ events: [...get().events, ...evs.filter(e => e.type !== "delta")].slice(-400), since: evs[evs.length - 1].n, live });
+      }
       if (evs.some(e => e.type === "changed")) { await useStore.getState().reloadDoc(!get().pushed); set({ pushed: true }); }
       if (!r.running && get().running) {
         if (get().pushed) await useStore.getState().reloadDoc(false);   // final state after the turn
         if (get().timer) clearInterval(get().timer!);
-        set({ running: false, timer: null });
+        set({ running: false, timer: null, live: "" });
       } else if (r.running && !get().running) set({ running: true, timer: window.setInterval(() => void get().poll(), 650) });
     } catch { /* server busy: next tick */ }
   },

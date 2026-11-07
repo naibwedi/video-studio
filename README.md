@@ -67,6 +67,33 @@ One-time install (large: about 2-3 GB with the models, downloaded on first use):
 ```
 `studio doctor` tells you whether it is installed. Claude can start it too (the `auto_time_lyrics` tool).
 
+### Make it look good (v0.7)
+
+**Lyrics look.** Select nothing, then in the Inspector open *Lyrics look*: five presets (Classic, Gold karaoke, Bright karaoke, Soft, Bold centre), your own colours,
+size, outline and position (bottom, middle, top). **Karaoke** fills each word with the "sung" colour while it is sung. The word times are spread over the line by
+word length (a Ge'ez letter is one syllable), so run *Auto-time lyrics* first for the best result. The preview and the render use the same numbers.
+
+**Shots.** Drag a shot sideways on the timeline to put it somewhere else, or use *Earlier / Later* in the Inspector. Every shot keeps its own length, so the video does
+not get longer or shorter. Each cut can have its own transition (soft fade, dissolve, dip to black, wipes, slides, circle open, zoom in): select the shot, *Cut into this shot*.
+
+**Beat grid.** The wave-shaped button in the timeline bar finds the tempo and every beat of the song (no extra install). Beats are small ticks, bar starts are tall gold ticks,
+and drags snap to them. *Snap cuts to beat* moves every cut onto the nearest beat; *Cut long shots on bars* splits shots longer than 5 seconds on the music.
+In the terminal: `studio beats gundi`.
+
+**Smart 9:16 crop.** *Smart 9:16 crop for all shots* (Inspector) looks at every shot and moves the vertical crop toward what stands out in the picture. It stays near the middle
+when nothing stands out (landscapes, textures). Check the result with the 9:16 preview and fix single shots with the crop slider. Terminal: `studio crop gundi`.
+
+**Search footage by meaning.** The sparkle button next to the Media search box turns a sentence ("a single candle in a dark room") into matching clips, even where the tags
+have no such word. It needs the optional AI install (below); the first use downloads a small model (about 350 MB) and indexes the library (a minute or two).
+Claude has the same search (`search_by_meaning`). Terminal: `studio index`.
+
+**Never lose work.** The editor saves 4 seconds after your last change (untick *autosave* in the top bar to stop it). Every save is also kept as a **version** (clock button):
+the 40 newest, plus one made just before each Claude request, so a whole Claude turn can be rolled back. *Save as template* keeps a video's look (lyrics style, logo, cards,
+pop-ups, grade) so *New video* can start from it. The **Videos** button shows all your videos as cards.
+
+**Publish-ready.** *Render > Export everything* builds both sizes with sound, the CapCut set (silent video, MP3, SRT), thumbnails and the YouTube text in one go.
+*YouTube title, description, tags* writes `exports/<video>/YouTube/youtube.txt` (lyrics with times included). It is a draft to paste, nothing is uploaded.
+
 ### Claude, your co-editor
 
 The panel on the right is Claude working **inside** your edit. Ask in plain words, with the playhead where you mean:

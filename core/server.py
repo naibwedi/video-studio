@@ -3,9 +3,9 @@
 Pages and API live here; the page itself is core/ui/index.html. Long jobs (renders) go through ONE queue, one at a time,
 because two renders at once have damaged files before.
 """
-import array, contextlib, io, json, mimetypes, os, queue, re, secrets, subprocess, sys, threading, time, urllib.parse
+import array, contextlib, io, json, mimetypes, os, queue, re, secrets, shutil, subprocess, sys, threading, time, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from . import chat, draft, paths, project, qc, tools
+from . import agent, beats, chat, clipsearch, draft, paths, project, qc, tools, versions
 from .edits import save_project
 
 TOKEN = secrets.token_hex(16)          # the page carries it; other websites cannot know it
@@ -63,6 +63,11 @@ def job_progress(j):
     if str(j.get("title", "")).startswith("align"):
         marks = (("wrote", 0.99), ("listening", 0.72), ("loading the speech", 0.55), ("voice separated", 0.45), ("separating", 0.1))
         return next((p for key, p in marks if any(key in l for l in j["log"])), 0.02 if j["status"] == "running" else 0.0)
+    if str(j.get("title", "")).startswith("export"):
+        marks = (("youtube pack", 0.98), ("packed", 0.9), ("thumbnails", 0.85))
+        base = next((p for key, p in marks if any(key in l for l in j["log"])), 0.0)
+        seen = [m for m in (re.search(r"shot\s+(\d+)/(\d+)", l) for l in j["log"]) if m]
+        return max(base, min(0.8, 0.8 * len(seen) / max(1, 3 * int(seen[-1][2]))) if seen else 0.02)
     seen = [m for m in (re.search(r"shot\s+(\d+)/(\d+)", l) for l in j["log"]) if m]
     if not seen:
         return 0.02 if j["status"] == "running" else 0.0
@@ -97,7 +102,7 @@ def project_payload(name):
     p = project.load(name)
     tags = draft.load()
     return {"name": name, "raw": raw, "duration": p["duration"], "title": p["title"],
-            "shots": [{"at": s["at"], "clip": s["clip"], "start": s["start"], "pan": s["pan"],
+            "shots": [{"at": s["at"], "clip": s["clip"], "start": s["start"], "pan": s["pan"], "transition": s["transition"],
                        "tags": tags.get(s["clip"], {}).get("tags", [])} for s in p["_shots"]],
             "exports": export_files(name), "audio": os.path.basename(p["_audio"]), "channel": p["channel"], "overlays": p["overlays"],
             "export_dir": os.path.join(paths.EXPORTS, name),
@@ -186,7 +191,7 @@ def valid_name(n):
     return bool(re.fullmatch(r"[A-Za-z0-9_-]{1,40}", n or ""))
 
 
-def create_project(name, title, filename, body):
+def create_project(name, title, filename, body, template=""):
     d = project.project_dir(name)
     if os.path.exists(d):
         raise ValueError(f"A project named '{name}' already exists")
@@ -198,6 +203,12 @@ def create_project(name, title, filename, body):
            "overlays": {"logo": {"image": "library/brand/logo.jpg", "in": 3.0, "out": None},
                         "title_card": {"text": title or name, "subtitle": "", "in": 1.0, "out": 6.0}, "popups": []},
            "shots": []}
+    if template:
+        try:
+            versions.apply_template(raw, template, title or name)
+        except ValueError:
+            shutil.rmtree(d, ignore_errors=True)
+            raise
     json.dump(raw, open(project.json_path(name), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
 
@@ -284,6 +295,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(peaks_for(m[1], int(q.get("n", ["3000"])[0])))
             if m := re.fullmatch(r"/api/strip/((?:pb)?\d+)", path):
                 return self.send_file(strip_for(m[1]))
+            if m := re.fullmatch(r"/api/beats/([\w-]+)", path):
+                return self.send_json(beats.analyse(m[1]))
+            if m := re.fullmatch(r"/api/versions/([\w-]+)", path):
+                return self.send_json(versions.listing(m[1]))
+            if path == "/api/templates":
+                return self.send_json(versions.template_names())
+            if path == "/api/search":
+                query = q.get("q", [""])[0].strip()
+                if not query:
+                    return self.send_json([])
+                if not clipsearch.available():
+                    return self.send_json({"error": "Search by meaning needs the optional AI install: pip install -r requirements-ai.txt"}, 400)
+                return self.send_json([{"id": c, "score": round(sc, 3)} for c, sc in clipsearch.search(query, 40)])
             if path == "/api/brand/logo":
                 return self.send_file(os.path.join(paths.ROOT, "library", "brand", "logo.jpg"))
             if path in ("/", "/classic"):
@@ -348,8 +372,34 @@ class Handler(BaseHTTPRequestHandler):
         path, q = u.path, urllib.parse.parse_qs(u.query)
         try:
             if m := re.fullmatch(r"/api/project/([\w-]+)/save", path):
-                save_project(m[1], self.body_json())
+                data = self.body_json()
+                save_project(m[1], data)
+                versions.snapshot(m[1], "auto" if data.get("auto") else "saved")
                 return self.send_json(project_payload(m[1]))
+            if m := re.fullmatch(r"/api/versions/([\w-]+)/(save|restore)", path):
+                if m[1] not in project_names():
+                    return self.send_json({"error": "unknown project"}, 400)
+                d = self.body_json()
+                if m[2] == "save":
+                    vid = versions.snapshot(m[1], str(d.get("label") or "named"), force=True)
+                    return self.send_json({"id": vid, "versions": versions.listing(m[1])})
+                versions.restore(m[1], str(d.get("id", "")))
+                return self.send_json(project_payload(m[1]))
+            if path == "/api/tool":                      # the editor uses the same tools Claude does (only these)
+                d = self.body_json()
+                if d.get("project") not in project_names() or d.get("tool") not in ("auto_crop_vertical", "youtube_pack"):
+                    return self.send_json({"error": "unknown project or tool"}, 400)
+                r = agent.call(d["tool"], d.get("args") or {}, d["project"])
+                text = chr(10).join(c["text"] for c in r["content"] if c["type"] == "text")
+                if r["isError"]:
+                    return self.send_json({"error": text}, 400)
+                return self.send_json({"text": text})
+            if path == "/api/templates":
+                d = self.body_json()
+                if d.get("project") not in project_names():
+                    return self.send_json({"error": "unknown project"}, 400)
+                versions.save_template(str(d.get("name", "")), d["project"])
+                return self.send_json(versions.template_names())
             if m := re.fullmatch(r"/api/job/(\d+)/cancel", path):
                 cancel_job(JOBS[int(m[1]) - 1])
                 return self.send_json(job_view(JOBS[int(m[1]) - 1]))
@@ -410,6 +460,12 @@ class Handler(BaseHTTPRequestHandler):
                     job = add_job(f"thumbnails {name}", ["thumb", name] + prev)
                 elif action == "align":
                     job = add_job(f"align lyrics {name}", ["align", name])
+                elif action == "export":
+                    job = add_job(f"export everything {name}", ["export", name])
+                elif action == "youtube":
+                    job = add_job(f"YouTube pack {name}", ["youtube", name])
+                elif action == "index":
+                    job = add_job("index footage by meaning", ["index"])
                 elif action == "qc":
                     job = add_job(f"quality check {name}", ["qc", name])
                 elif action == "pack":
@@ -422,7 +478,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not valid_name(name):
                     return self.send_json({"error": "Use letters, numbers, - or _ for the project name"}, 400)
                 n = int(self.headers.get("Content-Length") or 0)
-                create_project(name, q.get("title", [""])[0], filename, self.rfile.read(n))
+                create_project(name, q.get("title", [""])[0], filename, self.rfile.read(n), q.get("template", [""])[0])
                 return self.send_json({"name": name})
             return self.send_json({"error": "not found"}, 404)
         except SystemExit as e:

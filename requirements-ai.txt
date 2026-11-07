@@ -1,4 +1,5 @@
-# Optional: exact lyric timing (studio align). About 2-3 GB with the models.
+# Optional AI features. About 2-3 GB with the models, downloaded on first use.
+# exact lyric timing (studio align):
 torch
 torchaudio
 demucs
@@ -6,3 +7,10 @@ soundfile
 numpy
 scipy
 uroman
+# search footage by meaning (studio index, the sparkle button in Media):
+torchvision
+open_clip_torch
+ftfy
+regex
+wcwidth
+timm

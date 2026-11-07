@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Captions, Film, Layers, Magnet, Maximize2, MousePointer2, Music, Scissors, Stamp, ZoomIn, ZoomOut } from "lucide-react";
+import { Activity, Captions, Film, Layers, Magnet, Maximize2, MousePointer2, Music, Scissors, Stamp, ZoomIn, ZoomOut } from "lucide-react";
 import { isLibraryClip, stripUrl } from "../api";
-import { Doc, clamp, fmtShort, moveCut, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, shotIndexAt, splitAt } from "../model";
+import { Doc, clamp, fmtShort, moveCut, moveShot, snapCutsToBeats, splitOnBars, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, shotIndexAt, splitAt } from "../model";
 import { useStore } from "../store";
 
 const H = { ruler: 28, v1: 78, lyr: 44, card: 34, logo: 30, aud: 58 };
@@ -14,6 +14,7 @@ function snapTarget(t: number, skip: string[] = []): number | null {
   const s = useStore.getState(), d = s.doc;
   if (!s.snap || !d) return null;
   const c: number[] = [s.t, 0, d.duration];
+  if (s.showBeats && s.beats) c.push(...s.beats.beats);
   d.shots.forEach(x => { if (!skip.includes(x.id)) c.push(x.at); });
   d.lines.forEach(l => { if (!skip.includes(l.id)) c.push(l.start, l.end); });
   d.style.popups.forEach(p => { if (!skip.includes(p.id)) c.push(p.at, p.at + p.dur); });
@@ -60,6 +61,21 @@ function Ruler({ left, width, onScrub }: { left: number; width: number; onScrub:
   return <div className="ruler" onPointerDown={onScrub}>{ticks}</div>;
 }
 
+/** Beat ticks over the music track: bar starts are tall and gold, other beats short. Only the visible part is drawn. */
+function BeatTicks({ left, width }: { left: number; width: number }) {
+  const beats = useStore(s => s.beats), ppx = useStore(s => s.ppx);
+  if (!beats) return null;
+  const a = left / ppx - 0.5, b = (left + width) / ppx + 0.5, bars = new Set(beats.downbeats.map(x => x.toFixed(3)));
+  const out: React.ReactNode[] = [];
+  for (const t of beats.beats) {
+    if (t < a || t > b) continue;
+    const bar = bars.has(t.toFixed(3));
+    if (!bar && ppx < 7) continue;
+    out.push(<i key={t} className={"beat" + (bar ? " bar" : "")} style={{ left: t * ppx }} />);
+  }
+  return <>{out}</>;
+}
+
 function Waveform({ left, width }: { left: number; width: number }) {
   const peaks = useStore(s => s.peaks), ppx = useStore(s => s.ppx), dur = useStore(s => s.doc?.duration ?? 1);
   const ref = useRef<HTMLCanvasElement>(null);
@@ -103,6 +119,7 @@ export function Timeline() {
   const doc = useStore(s => s.doc);
   const ppx = useStore(s => s.ppx), sel = useStore(s => s.sel), tool = useStore(s => s.tool), snap = useStore(s => s.snap), snapLine = useStore(s => s.snapLine);
   const { setSel, seek, setPpx, setTool, setSnap, commit } = useStore.getState();
+  const showBeats = useStore(s => s.showBeats), beats = useStore(s => s.beats);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ left: 0, width: 900 });
   const [dropIdx, setDropIdx] = useState(-1);
@@ -182,13 +199,18 @@ export function Timeline() {
         <button className={"ico" + (tool === "select" ? " on" : " ghost")} title="Select (V)" onClick={() => setTool("select")}><MousePointer2 size={15} /></button>
         <button className={"ico" + (tool === "razor" ? " on" : " ghost")} title="Razor: click a shot to cut it (C)" onClick={() => setTool("razor")}><Scissors size={15} /></button>
         <button className={"ico" + (snap ? " on" : " ghost")} title="Snapping" onClick={() => setSnap(!snap)}><Magnet size={15} /></button>
+        <button className={"ico" + (showBeats ? " on" : " ghost")} title={beats ? `Beat grid (${beats.bpm} bpm): cuts snap to it` : "Beat grid (finding the beat…)"} onClick={() => useStore.getState().setShowBeats(!showBeats)}><Activity size={15} /></button>
+        {showBeats && beats && <>
+          <button className="ghost" title="Move every cut to the nearest beat (within 0.6 s)" onClick={() => { const r = snapCutsToBeats(useStore.getState().doc!, beats.beats); if (r.moved) commit(() => r.doc); useStore.getState().toast(r.moved ? `${r.moved} cuts moved onto the beat` : "Cuts already sit on the beat", "ok"); }}>Snap cuts to beat</button>
+          <button className="ghost" title="Cut shots longer than 5 s at the bar starts" onClick={() => { const r = splitOnBars(useStore.getState().doc!, beats.downbeats); if (r.added) commit(() => r.doc); useStore.getState().toast(r.added ? `${r.added} long shots cut on the bars (swap the repeated footage)` : "No long shot to cut", "ok"); }}>Cut long shots on bars</button>
+        </>}
         <div className="sep" />
         <button className="ico ghost" title="Zoom out (-)" onClick={() => setPpx(ppx / 1.4)}><ZoomOut size={15} /></button>
         <input type="range" min={0} max={100} value={slider} onChange={e => setPpx(fromSlider(+e.target.value))} aria-label="Zoom" />
         <button className="ico ghost" title="Zoom in (+)" onClick={() => setPpx(ppx * 1.4)}><ZoomIn size={15} /></button>
         <button className="ico ghost" title="Fit the whole video (\\)" onClick={fit}><Maximize2 size={15} /></button>
         <span className="grow" />
-        <span className="dim mono" style={{ fontSize: 11.5 }}>{doc.shots.length} shots · {doc.lines.length} lines · Ctrl+wheel zoom · S cut · Del delete</span>
+        <span className="dim mono" style={{ fontSize: 11.5 }}>{doc.shots.length} shots · {doc.lines.length} lines · drag a shot to reorder · Ctrl+wheel zoom · S cut</span>
       </div>
       <div className="tl-wrap">
         <div className="tl-labels" style={{ height: TOTAL }}>
@@ -212,7 +234,13 @@ export function Timeline() {
                 return (
                   <div key={s.id} className={"clip v" + (on ? " sel" : "") + (dropIdx === i ? " drop" : "")}
                     style={{ left: s.at * ppx, width: Math.max(4, w), backgroundImage: isLibraryClip(s.clip) ? `url(${stripUrl(s.clip)})` : undefined }}
-                    onPointerDown={e => { if (e.button !== 0) return; if (tool === "razor") { e.stopPropagation(); commit(d => splitAt(d, tAt(e.clientX))); return; } e.stopPropagation(); setSel({ kind: "shot", id: s.id }); }}
+                    onPointerDown={e => { if (e.button !== 0) return; if (tool === "razor") { e.stopPropagation(); commit(d => splitAt(d, tAt(e.clientX))); return; } e.stopPropagation(); setSel({ kind: "shot", id: s.id });
+                      drag(e, dx => {                                         // drag a shot sideways to reorder (each shot keeps its length)
+                        const tx = useStore.getState().tx!, i0 = tx.shots.findIndex(x => x.id === s.id);
+                        if (i0 < 0 || Math.abs(dx) * useStore.getState().ppx < 8) return;
+                        const mid = tx.shots[i0].at + (shotEnd(tx, i0) - tx.shots[i0].at) / 2 + dx;
+                        useStore.getState().liveEdit(b => moveShot(b, s.id, shotIndexAt(tx, clamp(mid, 0, doc.duration - 0.01))));
+                      }); }}
                     onDoubleClick={() => seek(s.at)}>
                     {w > 54 && <div className="lab">#{s.clip}</div>}
                     {w > 80 && <div className="dur">{(end - s.at).toFixed(1)}s</div>}
@@ -254,7 +282,7 @@ export function Timeline() {
               )}
             </div>
             {/* MUSIC */}
-            <div className="track" style={{ height: H.aud, background: "#070b1d" }} onPointerDown={emptyDown}><Waveform left={view.left} width={view.width} /></div>
+            <div className="track" style={{ height: H.aud, background: "#070b1d" }} onPointerDown={emptyDown}><Waveform left={view.left} width={view.width} />{showBeats && <BeatTicks left={view.left} width={view.width} />}</div>
             {snapLine != null && <div className="snapline" style={{ left: snapLine * ppx }} />}
             <Playhead />
           </div>

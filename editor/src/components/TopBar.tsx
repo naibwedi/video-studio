@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ClipboardCheck, ExternalLink, Film, FolderOpen, Loader2, Package, Plus, Redo2, Save, Undo2, X } from "lucide-react";
+import { Camera, ChevronDown, ClipboardCheck, ExternalLink, Film, FolderOpen, History, LayoutGrid, Loader2, Package, Plus, Redo2, Rocket, Save, Undo2, X, Youtube } from "lucide-react";
 import { api } from "../api";
 import { useStore } from "../store";
 import { Modal } from "./Fields";
+import { Home, Versions } from "./Library";
 
 function NewVideo({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState(""), [title, setTitle] = useState(""), [file, setFile] = useState<File | null>(null), [busy, setBusy] = useState(false);
+  const [templates, setTemplates] = useState<string[]>([]), [tpl, setTpl] = useState("");
+  useEffect(() => { api<string[]>("/api/templates").then(setTemplates).catch(() => {}); }, []);
   const go = async () => {
     if (!file || !name) return useStore.getState().toast("Give it a name and choose a song", "bad");
     setBusy(true);
     try {
-      const r = await fetch(`/api/upload?name=${encodeURIComponent(name)}&title=${encodeURIComponent(title)}&filename=${encodeURIComponent(file.name)}`, { method: "POST", headers: { "X-Studio-Token": window.STUDIO_TOKEN }, body: file });
+      const r = await fetch(`/api/upload?name=${encodeURIComponent(name)}&title=${encodeURIComponent(title)}&filename=${encodeURIComponent(file.name)}&template=${encodeURIComponent(tpl)}`, { method: "POST", headers: { "X-Studio-Token": window.STUDIO_TOKEN }, body: file });
       const j = await r.json(); if (!r.ok) throw new Error(j.error);
       const projects = await api<any[]>("/api/projects"); useStore.setState({ projects });
       onClose(); await useStore.getState().load(j.name);
@@ -25,6 +28,10 @@ function NewVideo({ onClose }: { onClose: () => void }) {
         <input type="text" placeholder="Title shown in the video" value={title} onChange={e => setTitle(e.target.value)} />
       </div>
       <input type="file" accept="audio/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+      {templates.length > 0 && (
+        <label className="field" style={{ marginTop: 10 }}><span>Start from a template (lyrics style, logo, cards, pop-ups)</span>
+          <select value={tpl} onChange={e => setTpl(e.target.value)}><option value="">None: the standard look</option>{templates.map(t => <option key={t} value={t}>{t}</option>)}</select></label>
+      )}
       <div className="row" style={{ marginTop: 12 }}><button className="pri" disabled={busy} onClick={go}>{busy ? "Creating…" : "Create"}</button><button onClick={onClose}>Cancel</button></div>
     </Modal>
   );
@@ -53,7 +60,9 @@ function RenderMenu() {
           <button onClick={() => run("build", { preview: true })}><Film size={14} /> Quick preview (half size, both sizes)</button>
           <button onClick={() => run("build", { preview: false })}><Film size={14} /> Full build (sound + subtitles)</button>
           <button onClick={() => run("build", { preview: false, variant: "video_only" })}><Film size={14} /> Silent video only (for CapCut)</button>
+          <button onClick={() => run("export")} title="Both sizes with sound, the CapCut set, thumbnails and the YouTube text"><Rocket size={14} /> Export everything (publish-ready)</button>
           <div style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
+          <button onClick={() => run("youtube")}><Youtube size={14} /> YouTube title, description, tags</button>
           <button onClick={() => run("teaser", { preview: false })}><Film size={14} /> Teaser (~50 s)</button>
           <button onClick={() => run("thumb", { preview: false })}><Camera size={14} /> Thumbnails</button>
           <button onClick={() => run("qc")}><ClipboardCheck size={14} /> Quality check</button>
@@ -107,11 +116,13 @@ function JobsPill() {
 
 export function TopBar() {
   const { projects, name, dirty, hist, fut } = useStore();
-  const [newOpen, setNewOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false), [versions, setVersions] = useState(false);
+  const home = useStore(st => st.home), savedAt = useStore(st => st.savedAt), autosave = useStore(st => st.autosave);
   const s = useStore.getState();
   return (
     <header className="top">
       <div className="brand"><span className="mark"><Film size={15} /></span> video-studio</div>
+      <button className="ghost" onClick={() => s.setHome(true)} title="All your videos"><LayoutGrid size={14} /> Videos</button>
       <select value={name ?? ""} onChange={e => void s.load(e.target.value)} aria-label="Project">
         {projects.map(p => <option key={p.name} value={p.name}>{p.title || p.name}</option>)}
       </select>
@@ -120,11 +131,15 @@ export function TopBar() {
       <button className="ico ghost" disabled={!hist.length} onClick={s.undo} title="Undo (Ctrl+Z)"><Undo2 size={15} /></button>
       <button className="ico ghost" disabled={!fut.length} onClick={s.redo} title="Redo (Ctrl+Y)"><Redo2 size={15} /></button>
       <button className="pri" disabled={!dirty} onClick={() => void s.save()} title="Save (Ctrl+S)"><Save size={14} /> Save{dirty && <span className="dot" />}</button>
+      <button className="ghost" onClick={() => setVersions(true)} title="Earlier versions and templates" disabled={!name}><History size={14} /></button>
+      <label className="dim row" style={{ fontSize: 11.5, gap: 4 }} title="Saves 4 seconds after your last change"><input type="checkbox" checked={autosave} onChange={e => s.setAutosave(e.target.checked)} />autosave{savedAt && autosave && !dirty ? " ✓" : ""}</label>
       <span className="grow" />
       <JobsPill />
       <RenderMenu />
       <a className="dim" href="/classic" style={{ fontSize: 11.5, textDecoration: "none" }} title="The older form-based dashboard">Classic</a>
       {newOpen && <NewVideo onClose={() => setNewOpen(false)} />}
+      {versions && <Versions onClose={() => setVersions(false)} />}
+      {home && <Home onNew={() => setNewOpen(true)} />}
     </header>
   );
 }

@@ -5,7 +5,7 @@ Every tool takes the project name from the session, so Claude never needs file p
 """
 import base64, contextlib, io, json, os, subprocess, urllib.request
 from PIL import Image, ImageDraw
-from . import draft, edits, overlays, paths, project, qc
+from . import beats, clipsearch, draft, edits, overlays, paths, project, qc, smartcrop, textstyle, youtube
 
 TOOLS = {}
 EDIT_TOOLS = set()      # tools that change the project (the editor reloads after these)
@@ -58,6 +58,8 @@ def get_project(name):
     out += ["", "CARDS: " + (f"title card \"{tc['text']}\" {edits.fmt(tc['in'])}-{edits.fmt(tc['out'])}" if tc else "no title card")
             + "; " + (f"end card from {edits.fmt(ec['in'])}" if ec else "no end card"),
             f"Corner logo: from {edits.fmt(ov['logo']['in'] or 0)}" + (f" to {edits.fmt(ov['logo']['out'])}" if ov["logo"]["out"] is not None else " to the end")]
+    sb = d["subs"]
+    out += [f"Lyrics look: {sb['preset']} style, {'karaoke sweep' if sb['karaoke'] else 'plain'}, {sb['position']}, size x{sb['scale']}, text {sb['color']}" + (f", sung colour {sb['active']}" if sb["karaoke"] else "")]
     out += [f"Subscribe pop-up {i + 1}: at {edits.fmt(p['at'])} for {p['dur']}s: \"{p['tagline']}\"" for i, p in enumerate(ov["popups"])]
     notes = qc.project_checks(project.load(name))
     out += ["", "THINGS TO CHECK: " + ("none" if not notes else "")] + [f"- {lv}: {tx}" for lv, tx in notes]
@@ -146,8 +148,14 @@ def check_project(name):
 
 
 # ---------------------------------------------------------------- changing the edit
+_current = [None]          # the project a write tool is working on (tools that need its song, like the beat snap, read it)
+
+
 def _w(fn):
-    return lambda name, **kw: edits.edit(name, lambda doc: fn(doc, **kw))
+    def run(name, **kw):
+        _current[0] = name
+        return edits.edit(name, lambda doc: fn(doc, **kw))
+    return run
 
 
 def _reg(name, description, props, required, fn):
@@ -215,3 +223,57 @@ def auto_time_lyrics(name):
     with urllib.request.urlopen(req, timeout=20) as r:
         j = json.load(r)
     return f"Started: {j['title']} (job {j['id']}). It takes a few minutes; the lyric times change when it finishes. Call get_project afterwards to see them."
+
+
+# ---------------------------------------------------------------- order, transitions, lyric look, beats, crop, meaning search
+_reg("reorder_shot", "Move a shot to another place in the order (1-based). Every shot keeps its own length, so the video length stays the same and the shots between shift.",
+     {"shot": INT, "to": INT}, ["shot", "to"], edits.reorder_shot)
+_reg("set_transition", "Choose how the cut INTO a shot looks (shot 2 or higher). kinds: " + ", ".join(project.TRANSITIONS) + ". 'fade' is the soft default.",
+     {"shot": INT, "kind": {"type": "string", "enum": list(project.TRANSITIONS)}}, ["shot", "kind"], edits.set_transition)
+_reg("set_all_transitions", "Use one transition kind for every cut in the video.", {"kind": {"type": "string", "enum": list(project.TRANSITIONS)}}, ["kind"], edits.set_all_transitions)
+_reg("set_text_style", "Change how the lyrics look. preset: " + ", ".join(textstyle.PRESETS) + " (karaoke styles fill each word with colour as it is sung). Other fields override the preset: "
+     "color and active are #RRGGBB, outline 0-10, scale 0.6-1.8, position bottom|middle|top, karaoke true|false.",
+     {"preset": {"type": "string", "enum": list(textstyle.PRESETS)}, "color": STR, "active": STR, "outline": NUM, "scale": NUM,
+      "position": {"type": "string", "enum": list(textstyle.POSITIONS)}, "karaoke": {"type": "boolean"}}, [], edits.set_text_style)
+
+
+@tool("beat_grid", "The song's tempo and beats: bpm, bar starts, and how loud each bar is. Use it to cut on the beat or to find calm and big parts of the song.")
+def beat_grid(name):
+    b = beats.analyse(name)
+    bars = b["bars"]
+    peak = max((x["level"] for x in bars), default=1) or 1
+    rows = [f"bar {i + 1} at {edits.fmt(x['start'])}: {'#' * max(1, round(10 * x['level'] / peak))}" for i, x in enumerate(bars)]
+    return f"About {b['bpm']} beats per minute, {len(b['beats'])} beats, {len(b['downbeats'])} bars (a bar is about {60 / b['bpm'] * 4:.1f}s)." + chr(10) + "Loudness per bar (# = louder):" + chr(10) + chr(10).join(rows)
+
+
+_reg("snap_cuts_to_beats", "Move every cut to the nearest beat (or bar start with bars_only) if one is within max_move seconds. Keeps shots at least 0.5s long.",
+     {"bars_only": {"type": "boolean"}, "max_move": NUM}, [],
+     lambda doc, bars_only=False, max_move=0.6: _snap(doc, bars_only, max_move))
+
+
+def _snap(doc, bars_only, max_move):
+    b = beats.analyse(_current[0])
+    n = beats.snap_cuts(doc, b["downbeats"] if bars_only else b["beats"], float(max_move))
+    return f"Moved {n} cuts onto the {'bar starts' if bars_only else 'beat'} (about {b['bpm']} bpm)."
+
+
+@tool("auto_crop_vertical", "Set the 9:16 crop position of every shot so the vertical video keeps the part of the picture that stands out (instead of always the middle).", writes=True)
+def auto_crop_vertical(name):
+    return edits.edit(name, lambda doc: smartcrop.auto_pan(doc, name))
+
+
+@tool("search_by_meaning", "Search the footage library by what a picture MEANS or looks like, in a full sentence (for example: 'a single candle in a dark room', 'hands raised in prayer at sunrise'). "
+      "Better than search_clips for ideas that tags miss. Needs the optional AI install; falls back to words if it is missing.",
+      {"query": STR, "limit": {"type": "integer", "minimum": 1, "maximum": 20}}, ["query"])
+def search_by_meaning(name, query, limit=8):
+    if not clipsearch.available():
+        return "Search by meaning is not installed on this PC (pip install -r requirements-ai.txt). Use search_clips with words instead."
+    tags = draft.load()
+    hits = clipsearch.search(query, int(limit))
+    return f"{len(hits)} clips that match '{query}' best:" + chr(10) + chr(10).join(f"#{c}  match {s:.2f}  {' '.join(tags.get(c, {}).get('tags', [])[:6])}" for c, s in hits)
+
+
+@tool("youtube_pack", "Write the YouTube title, description (with lyrics and times) and tags for this video to exports/<name>/YouTube/youtube.txt and return the text.")
+def youtube_pack(name):
+    path, text = youtube.make(name)
+    return text + chr(10) + f"(saved to {paths.rel(path)})"

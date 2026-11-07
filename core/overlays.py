@@ -1,7 +1,7 @@
 """Subtitles (.srt/.ass) and the picture overlays: corner logo, title card, end card."""
 import os
 from PIL import Image, ImageDraw, ImageFont
-from . import paths
+from . import paths, textstyle
 
 GOLD = (233, 190, 92, 255)
 CREAM = (245, 235, 208, 255)
@@ -20,14 +20,21 @@ def write_srt(p, path):
 
 def write_ass(p, size_name, W, H, path):
     sub = p["subtitles"]
-    fs, mv, pad = sub["size"][size_name], sub["margin_v"][size_name], sub["pad"]
+    st = textstyle.clean(sub.get("style"))
+    pad = sub["pad"]
+    fs = round(sub["size"][size_name] * st["scale"])
+    align, mv = {"bottom": (2, sub["margin_v"][size_name]), "middle": (5, 0), "top": (8, int(H * 0.08))}[st["position"]]
+    kara = st["karaoke"]
+    # in ASS the "primary" colour is what a karaoke word turns INTO and "secondary" is what it starts as
+    prim, sec = (st["active"], st["color"]) if kara else (st["color"], st["color"])
     ass = ["[Script Info]\nScriptType: v4.00+\nPlayResX: %d\nPlayResY: %d\nWrapStyle: 2\n" % (W, H),
            "[V4+ Styles]\nFormat: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,"
            "Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding",
-           f"Style: Lyric,{sub['font']},{fs},&H00F5F5F5,&H00F5F5F5,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,1,2,60,60,{mv},1\n",
+           f"Style: Lyric,{sub['font']},{fs},{textstyle.ass_colour(prim)},{textstyle.ass_colour(sec)},{textstyle.ass_colour(st['outline_color'])},&H80000000,"
+           f"1,0,0,0,100,100,0,0,1,{st['outline']:g},1,{align},60,60,{mv},1\n",
            "[Events]\nFormat: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text"]
-    ass += [f"Dialogue: 0,{ts(l['start'] + pad, False)},{ts(l['end'] - pad, False)},Lyric,,0,0,0,,{{\\fad(250,250)}}{l['text']}"
-            for l in sub["lines"]]
+    ass += [f"Dialogue: 0,{ts(l['start'] + pad, False)},{ts(l['end'] - pad, False)},Lyric,,0,0,0,,{{\\fad(250,250)}}"
+            + (textstyle.karaoke_text(l["text"], l["start"], l["end"], pad) if kara else l["text"]) for l in sub["lines"]]
     open(path, "w", encoding="utf-8").write("\n".join(ass))
 
 

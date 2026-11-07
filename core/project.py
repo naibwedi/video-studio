@@ -27,6 +27,7 @@ DEFAULTS = {
     "shots": [],
 }
 SIZES = {"16x9": (1920, 1080), "9x16": (1080, 1920)}
+TRANSITIONS = ("fade", "fadeblack", "dissolve", "wipeleft", "wiperight", "slideleft", "slideright", "circleopen", "zoomin", "smoothleft")
 
 
 def merge(base, extra):
@@ -103,7 +104,8 @@ def at_time(value, lines):
 def resolve_shot(p, s, lines):
     return {"at": at_time(s["at"], lines), "file": resolve_clip(p, s["clip"]), "clip": str(s["clip"]),
             "start": float(s.get("start", 0)), "pan": float(s.get("pan", 0.5)),
-            "motion": s.get("motion", "drift")}
+            "motion": s.get("motion", "drift"),
+            "transition": s.get("transition") if s.get("transition") in TRANSITIONS else "fade"}   # how this shot is entered from the previous one
 
 
 def audio_seconds(path):

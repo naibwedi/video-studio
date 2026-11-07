@@ -4,7 +4,7 @@ A 'doc' is the same shape the editor works with: numeric times in seconds, shots
 Indices in the operations are 1-based ("shot 5", "line 3"), as they appear in the editor.
 """
 import json, os, re
-from . import draft, paths, project
+from . import draft, paths, project, textstyle
 
 MIN_SHOT = 0.5
 
@@ -22,9 +22,14 @@ def save_project(name, data):
                 known = re.fullmatch(r"(pb)?\d+", clip) or any(os.path.exists(os.path.join(base, clip)) for base in (project.project_dir(name), paths.ROOT, ""))
                 if not known:
                     raise ValueError(f"bad clip {clip!r}: not a library number and no such file")
-                shots.append({"at": float(at) if re.fullmatch(r"\d+(\.\d+)?", str(at)) else at, "clip": str(s["clip"]),
-                              "start": float(s.get("start", 0)), "pan": float(s.get("pan", 0.5))})
+                item = {"at": float(at) if re.fullmatch(r"\d+(\.\d+)?", str(at)) else at, "clip": str(s["clip"]),
+                        "start": float(s.get("start", 0)), "pan": float(s.get("pan", 0.5))}
+                if s.get("transition") in project.TRANSITIONS and s["transition"] != "fade":
+                    item["transition"] = s["transition"]
+                shots.append(item)
             raw["shots"] = shots
+        if "subs" in data:
+            raw.setdefault("subtitles", {})["style"] = textstyle.clean(data["subs"])
         if "lines" in data:
             lines = []
             for ln in data["lines"]:
@@ -66,7 +71,8 @@ def save_project(name, data):
 # ---------------------------------------------------------------- doc <-> project
 def load_doc(name):
     p = project.load(name)
-    shots = [{"at": round(float(s["at"]), 2), "clip": str(s["clip"]), "start": round(float(s["start"]), 2), "pan": round(float(s["pan"]), 2)} for s in p["_shots"]]
+    shots = [{"at": round(float(s["at"]), 2), "clip": str(s["clip"]), "start": round(float(s["start"]), 2), "pan": round(float(s["pan"]), 2),
+              "transition": s["transition"]} for s in p["_shots"]]
     if shots:
         shots[0]["at"] = 0.0
     lines = []
@@ -80,14 +86,15 @@ def load_doc(name):
               else {"at": float(e["at"]), "dur": float(e.get("dur", 5)), "click": float(e.get("click", 2.6)), "tagline": e.get("tagline", "Subscribe for more mezmur")}
               for e in (ov.get("popups") or [])]
     return {"title": p["title"], "theme": " ".join(p.get("theme") or []), "duration": float(p["duration"]), "shots": shots, "lines": lines,
-            "channel": dict(p["channel"]),
+            "channel": dict(p["channel"]), "subs": textstyle.clean(p["subtitles"].get("style")),
             "overlays": {"logo": {"in": (ov.get("logo") or {}).get("in"), "out": (ov.get("logo") or {}).get("out")},
                          "title_card": dict(ov["title_card"]) if ov.get("title_card") else None,
                          "end_card": dict(ov["end_card"]) if ov.get("end_card") else None, "popups": popups}}
 
 
 def save_doc(name, doc):
-    save_project(name, {"title": doc["title"], "theme": doc["theme"], "shots": doc["shots"], "lines": doc["lines"], "channel": doc["channel"], "overlays": doc["overlays"]})
+    save_project(name, {"title": doc["title"], "theme": doc["theme"], "shots": doc["shots"], "lines": doc["lines"], "channel": doc["channel"],
+                        "overlays": doc["overlays"], "subs": doc.get("subs") or textstyle.DEFAULT})
 
 
 def edit(name, fn):
@@ -135,7 +142,7 @@ def fmt(t):
 def describe_shot(doc, i):
     s = doc["shots"][i]
     tags = draft.load().get(s["clip"], {}).get("tags", [])
-    return f"shot {i + 1}: #{s['clip']} {fmt(s['at'])}-{fmt(shot_end(doc, i))} ({shot_end(doc, i) - s['at']:.1f}s) from {s['start']}s into the clip, pan {s['pan']}" + (f" [{' '.join(tags[:5])}]" if tags else "")
+    return f"shot {i + 1}: #{s['clip']} {fmt(s['at'])}-{fmt(shot_end(doc, i))} ({shot_end(doc, i) - s['at']:.1f}s) from {s['start']}s into the clip, pan {s['pan']}" + (f", enters with '{s['transition']}'" if i and s.get("transition", "fade") != "fade" else "") + (f" [{' '.join(tags[:5])}]" if tags else "")
 
 
 def describe_line(doc, i):
@@ -150,7 +157,7 @@ def split_shot(doc, time):
     s = doc["shots"][i]
     if t - s["at"] < MIN_SHOT or shot_end(doc, i) - t < MIN_SHOT:
         raise ValueError(f"{fmt(t)} is within {MIN_SHOT}s of a cut (shot {i + 1} runs {fmt(s['at'])}-{fmt(shot_end(doc, i))}); pick a time further inside the shot.")
-    doc["shots"].insert(i + 1, {"at": t, "clip": s["clip"], "start": round(s["start"] + (t - s["at"]), 2), "pan": s["pan"]})
+    doc["shots"].insert(i + 1, {"at": t, "clip": s["clip"], "start": round(s["start"] + (t - s["at"]), 2), "pan": s["pan"], "transition": "fade"})
     return f"Split shot {i + 1} at {fmt(t)}. There are now {len(doc['shots'])} shots."
 
 
@@ -306,3 +313,59 @@ def set_logo(doc, appears=None, disappears=None):
     if disappears is not None:
         lg["out"] = None if disappears == "" else _t(disappears, "disappears")
     return f"Corner logo shows from {fmt(lg['in'] or 0)}" + (f" to {fmt(lg['out'])}." if lg["out"] is not None else " to the end.")
+
+
+# ---------------------------------------------------------------- order, transitions, lyric look
+def reorder_shot(doc, shot, to):
+    """Move a shot to another place in the order. Every shot keeps its own length, so the total length is unchanged and later shots shift."""
+    _item(doc, "shots", shot)
+    if not isinstance(to, int) or not 1 <= to <= len(doc["shots"]):
+        raise ValueError(f"'to' must be between 1 and {len(doc['shots'])}")
+    shots = doc["shots"]
+    lengths = [shot_end(doc, i) - s["at"] for i, s in enumerate(shots)]
+    item = list(zip(shots, lengths))
+    moved = item.pop(shot - 1)
+    item.insert(to - 1, moved)
+    t, out = 0.0, []
+    for s, ln in item:
+        out.append({**s, "at": round(t, 2)})
+        t += ln
+    doc["shots"][:] = out
+    return f"Moved shot {shot} to position {to}. Each shot kept its length."
+
+
+def set_transition(doc, shot, kind):
+    """The transition INTO a shot (from the previous one). shot 'all' is not supported here; use a loop."""
+    s = _item(doc, "shots", shot)
+    if shot == 1:
+        raise ValueError("Shot 1 is the first shot, so nothing comes into it. Set the transition on shot 2 or higher.")
+    if kind not in project.TRANSITIONS:
+        raise ValueError(f"transition must be one of: {', '.join(project.TRANSITIONS)}")
+    s["transition"] = kind
+    return f"The cut into shot {shot} now uses '{kind}'."
+
+
+def set_all_transitions(doc, kind):
+    if kind not in project.TRANSITIONS:
+        raise ValueError(f"transition must be one of: {', '.join(project.TRANSITIONS)}")
+    for s in doc["shots"][1:]:
+        s["transition"] = kind
+    return f"Every cut now uses '{kind}'."
+
+
+def set_text_style(doc, preset=None, color=None, active=None, outline=None, scale=None, position=None, karaoke=None):
+    """Change how the lyrics look. preset: classic, gold, karaoke, soft, bold (then individual fields override it)."""
+    st = dict(doc.get("subs") or textstyle.DEFAULT)
+    if preset is not None:
+        if preset not in textstyle.PRESETS:
+            raise ValueError(f"preset must be one of: {', '.join(textstyle.PRESETS)}")
+        st.update(textstyle.PRESETS[preset])
+        st["preset"] = preset
+    for k, v in (("color", color), ("active", active), ("outline", outline), ("scale", scale), ("position", position), ("karaoke", karaoke)):
+        if v is not None:
+            st[k] = v
+            if preset is None:
+                st["preset"] = "custom"
+    doc["subs"] = textstyle.clean(st)
+    s = doc["subs"]
+    return f"Lyrics: {s['preset']} style, {'karaoke sweep' if s['karaoke'] else 'no sweep'}, {s['position']}, size x{s['scale']}, text {s['color']}" + (f", sung colour {s['active']}" if s["karaoke"] else "") + "."

@@ -26,5 +26,7 @@ ffmpeg (not included in the repository) is downloaded by `setup.ps1`; Pillow is 
 | [demucs](https://github.com/adefossez/demucs) (htdemucs model) | MIT | separating the voice from the music |
 | [PyTorch / torchaudio](https://pytorch.org) (MMS_FA aligner model from Meta) | BSD-3-Clause / CC-BY-NC for the MMS model weights | finding where lyric lines are sung |
 | [uroman](https://github.com/isi-nlp/uroman) | Apache-2.0 | transliterating Ge'ez text for the aligner |
+| [open_clip](https://github.com/mlfoundations/open_clip) (ViT-B-32, LAION-2B weights) | MIT / MIT | search footage by meaning |
+| [torchvision, timm, ftfy](https://pytorch.org/vision) | BSD-3 / Apache-2.0 / MIT | helpers for open_clip |
 
 The MMS weights are licensed for non-commercial use: fine for your own church channel, but check before using it in a paid product.

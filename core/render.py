@@ -190,7 +190,7 @@ def build(p, size_name, variant="full", preview=False):
     fx = []
     prev = "[0:v]"
     for k in range(1, n):
-        fx.append(f"{prev}[{k}:v]xfade=transition=fade:duration={X}:offset={cuts[k] - X / 2:.3f}[x{k}]")
+        fx.append(f"{prev}[{k}:v]xfade=transition={shots[k].get('transition', 'fade')}:duration={X}:offset={cuts[k] - X / 2:.3f}[x{k}]")
         prev = f"[x{k}]"
 
     layers = []

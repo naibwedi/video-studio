@@ -1,7 +1,7 @@
 // Live preview: plays the real clips in a pool of <video> elements and composites everything on a canvas, driven by the song's <audio> clock.
 // It mirrors the ffmpeg render (drift move, grade, cross-fades, subtitles, cards, pop-ups) so what you scrub is close to what you build.
 import { clipUrl, thumbUrl } from "../api";
-import { Doc, Popup, Shot, clamp, shotEnd, shotIndexAt } from "../model";
+import { Doc, Line, Popup, Shot, clamp, shotEnd, shotIndexAt, sweepWords } from "../model";
 
 const X = 0.6;                                   // cross-fade seconds, same as the renderer
 const FONT = '"Ebrima", "Noto Sans Ethiopic", "Nyala", sans-serif';
@@ -128,7 +128,7 @@ export class Compositor {
     }
   }
 
-  private drawShot(doc: Doc, idx: number, alpha: number, t: number) {
+  private drawShot(doc: Doc, idx: number, alpha: number, t: number, dx = 0) {
     const { ctx, canvas: { width: W, height: H } } = this;
     const shot = doc.shots[idx];
     const slot = this.acquire(shot);
@@ -140,6 +140,8 @@ export class Compositor {
     const base = idx > 0 ? shot.at - X / 2 : 0;
     const len = shotEnd(doc, idx) - shot.at + X;
     const u = clamp((t - base) / len, 0, 1);
+    ctx.save();
+    ctx.translate(dx, 0);
     ctx.globalAlpha = alpha;
     ctx.filter = GRADE;
     if (this.aspect === "9x16") {
@@ -151,6 +153,24 @@ export class Compositor {
     }
     ctx.filter = "none";
     ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  /** The cut from shot `from` into shot `to`, `a` of the way through, in the style chosen for `to` (same set the renderer uses). */
+  private blend(doc: Doc, from: number, to: number, a: number, t: number) {
+    const { ctx, canvas: { width: W, height: H } } = this;
+    a = clamp(a, 0, 1);
+    const type = doc.shots[to].transition || "fade";
+    const reveal = (shape: () => void) => { this.drawShot(doc, from, 1, t); ctx.save(); ctx.beginPath(); shape(); ctx.clip(); this.drawShot(doc, to, 1, t); ctx.restore(); };
+    switch (type) {
+      case "fadeblack": if (a < 0.5) this.drawShot(doc, from, 1 - 2 * a, t); else this.drawShot(doc, to, 2 * a - 1, t); break;
+      case "wipeleft": case "smoothleft": reveal(() => ctx.rect(W * (1 - a), 0, W * a + 1, H)); break;
+      case "wiperight": reveal(() => ctx.rect(0, 0, W * a + 1, H)); break;
+      case "circleopen": reveal(() => ctx.arc(W / 2, H / 2, a * Math.hypot(W, H) / 2, 0, Math.PI * 2)); break;
+      case "slideleft": this.drawShot(doc, from, 1, t, -a * W); this.drawShot(doc, to, 1, t, (1 - a) * W); break;
+      case "slideright": this.drawShot(doc, from, 1, t, a * W); this.drawShot(doc, to, 1, t, -(1 - a) * W); break;
+      default: this.drawShot(doc, from, 1, t); this.drawShot(doc, to, a, t);          // fade, dissolve, zoomin
+    }
   }
 
   private render(doc: Doc, t: number) {
@@ -162,10 +182,10 @@ export class Compositor {
       const k = shotIndexAt(doc, t);
       if (k + 1 < n && t > doc.shots[k + 1].at - X / 2) {                 // fading out into the next shot
         const a = (t - (doc.shots[k + 1].at - X / 2)) / X;
-        this.drawShot(doc, k, 1, t); this.drawShot(doc, k + 1, clamp(a, 0, 1), t);
+        this.blend(doc, k, k + 1, a, t);
       } else if (k > 0 && t < doc.shots[k].at + X / 2) {                   // just after a cut: still fading in
         const a = (t - (doc.shots[k].at - X / 2)) / X;
-        this.drawShot(doc, k - 1, 1, t); this.drawShot(doc, k, clamp(a, 0, 1), t);
+        this.blend(doc, k - 1, k, a, t);
       } else this.drawShot(doc, k, 1, t);
       if (k + 1 < n) { const nx = this.acquire(doc.shots[k + 1]); this.drive(nx, doc.shots[k + 1], k + 1, t, false); }   // pre-load the next clip
     }
@@ -221,7 +241,7 @@ export class Compositor {
       if (t < l.start + 0.05 || t > l.end - 0.05) continue;
       const a = Math.min(fadeIn(t, l.start + 0.05, 0.25), fadeOut(t, l.end - 0.3, 0.25));
       ctx.save(); ctx.globalAlpha = a;
-      this.text(l.text, W / 2, H - (v ? 400 : 70) * k, (v ? 64 : 54) * k, "#f5f5f5", { stroke: 5 * k });
+      this.lyric(doc, l, t, k, v);
       ctx.restore();
       break;
     }
@@ -243,6 +263,38 @@ export class Compositor {
     }
     // subscribe pop-ups
     for (const p of st.popups) if (t >= p.at && t <= p.at + p.dur) this.drawPopup(doc, p, t, k, v);
+  }
+
+  /** One lyric line in the chosen look; with karaoke on, each word fills with the sung colour as it is sung. */
+  private lyric(doc: Doc, l: Line, t: number, k: number, v: boolean) {
+    const { ctx, canvas: { width: W, height: H } } = this, st = doc.subs;
+    const px = (v ? 64 : 54) * k * st.scale, stroke = st.outline * 1.7 * k;
+    const y = st.position === "bottom" ? H - (v ? 400 : 70) * k : st.position === "middle" ? H / 2 + px * 0.35 : H * 0.08 + px;
+    const draw = (s: string, x: number, fill: string, withStroke: boolean) => {
+      ctx.font = `700 ${px}px ${FONT}`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      if (withStroke && stroke > 0) { ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = st.outline_color; ctx.strokeText(s, x, y); }
+      ctx.fillStyle = fill; ctx.fillText(s, x, y);
+    };
+    if (!st.karaoke) {
+      ctx.font = `700 ${px}px ${FONT}`;
+      draw(l.text, W / 2 - ctx.measureText(l.text).width / 2, st.color, true);
+      return;
+    }
+    const spans = sweepWords(l.text, l.start, l.end);
+    const full = spans.map(x => x.word).join(" ");
+    ctx.font = `700 ${px}px ${FONT}`;
+    const x0 = W / 2 - ctx.measureText(full).width / 2;
+    draw(full, x0, st.color, true);
+    let sungTo = x0;                                           // x where the sung colour reaches
+    let before = "";
+    for (const sp of spans) {
+      ctx.font = `700 ${px}px ${FONT}`;
+      const xs = x0 + ctx.measureText(before).width, wd = ctx.measureText(sp.word).width;
+      const f = clamp((t - sp.a) / Math.max(1e-6, sp.b - sp.a), 0, 1);
+      if (f > 0) sungTo = xs + wd * f;
+      before += sp.word + " ";
+    }
+    if (sungTo > x0) { ctx.save(); ctx.beginPath(); ctx.rect(x0 - 4, 0, sungTo - x0 + 4, H); ctx.clip(); draw(full, x0, st.active, false); ctx.restore(); }
   }
 
   private drawPopup(doc: Doc, p: Popup, t: number, k: number, v: boolean) {

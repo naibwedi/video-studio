@@ -5,7 +5,7 @@ MCP server (core/mcp_server.py), tied to the video you have open. Authentication
 (your Claude login), or ANTHROPIC_API_KEY from .env if you set one. We never read or copy any login token.
 """
 import base64, glob, hashlib, json, os, re, shutil, subprocess, sys, threading, time
-from . import agent, paths
+from . import agent, paths, versions
 
 SYSTEM = """You are Claude, a co-editor inside video-studio, a lyric-video editor for an Eritrean Orthodox Tewahedo channel (ሰብአ ሰገል, The Magis).
 The user is editing ONE video. You have tools to read the edit, look at frames, search the footage library and change the edit.
@@ -76,6 +76,7 @@ class Session:
         self.project, self.events, self.running = project, [], False
         self.proc, self.session_id, self.lock = None, None, threading.Lock()
         self.tool_names = {}
+        self.buf, self.flushed = "", 0.0
 
     def add(self, ev):
         with self.lock:
@@ -109,6 +110,18 @@ def save_image(b64):
 def events_from(obj, sess):
     """Turn one stream-json line from Claude Code into simple events for the chat panel."""
     t, out = obj.get("type"), []
+    if t == "stream_event":                                    # text as it is written: batched, so the panel is not flooded
+        ev = obj.get("event") or {}
+        delta = ev.get("delta") or {}
+        if ev.get("type") == "content_block_delta" and delta.get("type") == "text_delta":
+            sess.buf += delta.get("text", "")
+            if time.time() - sess.flushed > 0.25 and sess.buf:
+                out.append({"type": "delta", "text": sess.buf})
+                sess.buf, sess.flushed = "", time.time()
+        return out
+    if t == "assistant" and sess.buf:
+        out.append({"type": "delta", "text": sess.buf})
+        sess.buf = ""
     if t == "system" and obj.get("subtype") == "init":
         if obj.get("session_id"):
             sess.session_id = obj["session_id"]
@@ -152,7 +165,7 @@ def _mcp_config(project, url, token):
 
 def command(claude, cfg, session_id):
     cmd = [claude, "-p", "--output-format", "stream-json", "--verbose", "--mcp-config", cfg, "--strict-mcp-config", "--tools", "",
-           "--allowedTools", "mcp__studio", "--permission-mode", "dontAsk", "--append-system-prompt", SYSTEM]
+           "--allowedTools", "mcp__studio", "--permission-mode", "dontAsk", "--include-partial-messages", "--append-system-prompt", SYSTEM]
     if os.environ.get("STUDIO_CLAUDE_MODEL"):
         cmd += ["--model", os.environ["STUDIO_CLAUDE_MODEL"]]
     if session_id:
@@ -169,6 +182,7 @@ def send(project, message, context, url, token):
         raise ValueError("Claude Code was not found on this PC. Install the Claude desktop app (or Claude Code), or set CLAUDE_BIN in .env.")
     if not signed_in(claude, True):
         raise ValueError("Claude Code is not signed in on this PC yet. Run the sign-in command shown in the chat panel once (or put ANTHROPIC_API_KEY in .env).")
+    versions.snapshot(project, "before-claude", force=True)       # so a whole Claude turn can be rolled back from the history too
     sess.add({"type": "user", "text": message})
     sess.running = True
     cfg = _mcp_config(project, url, token)

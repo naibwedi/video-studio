@@ -4,7 +4,7 @@ import argparse, json, os, shutil, sys
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from core import draft, paths, project, qc, render, stock, teaser, thumb, tools
+from core import beats, clipsearch, draft, edits, paths, project, qc, render, smartcrop, stock, teaser, thumb, tools, youtube
 
 paths.load_env()
 
@@ -100,6 +100,42 @@ def cmd_thumb(a):
     p = project.load(a.project)
     times = [float(t) for t in a.at.split(",")] if a.at else None
     thumb.run(p, times, a.text, a.sub, a.preview)
+
+
+def cmd_export(a):
+    """Everything for one video in one go: both sizes with sound, the silent CapCut set (video + MP3 + SRT), thumbnails and the YouTube text."""
+    p = project.load(a.project)
+    for size in p["sizes"]:
+        tools.check(render.build(p, size, "full"))
+    tools.pack(p)
+    p = project.load(a.project)
+    thumb.run(p, None, None, None, False)
+    path, _ = youtube.make(a.project)
+    print("youtube pack ->", paths.rel(path))
+    print("export finished: see", paths.rel(os.path.join(paths.EXPORTS, a.project)))
+
+
+def cmd_youtube(a):
+    path, text = youtube.make(a.project)
+    print(text)
+    print("saved ->", paths.rel(path))
+
+
+def cmd_beats(a):
+    b = beats.analyse(a.project)
+    print(f"{b['bpm']} bpm, {len(b['beats'])} beats, {len(b['downbeats'])} bars")
+    print("bar starts:", ", ".join(f"{t:.1f}" for t in b["downbeats"][:24]), "...")
+
+
+def cmd_index(a):
+    if not clipsearch.available():
+        sys.exit("Search by meaning needs:  pip install -r requirements-ai.txt")
+    n = clipsearch.build(print)
+    print(f"indexed {n} new clips")
+
+
+def cmd_crop(a):
+    edits.edit(a.project, lambda doc: print(smartcrop.auto_pan(doc, a.project)))
 
 
 def cmd_teaser(a):
@@ -281,6 +317,14 @@ def main():
     s.add_argument("project")
     s.add_argument("--dry", action="store_true", help="show the new times without writing them")
     s.set_defaults(f=cmd_align)
+
+    for nm, fn, hp in (("export", cmd_export, "build everything for a video: both sizes, CapCut set, thumbnails, YouTube text"),
+                       ("youtube", cmd_youtube, "write the YouTube title, description and tags"),
+                       ("beats", cmd_beats, "find the tempo and beats of the song"),
+                       ("crop", cmd_crop, "set the 9:16 crop of every shot to follow what stands out")):
+        sub.add_parser(nm, help=hp).add_argument("project")
+        sub.choices[nm].set_defaults(f=fn)
+    sub.add_parser("index", help="index the footage library for search by meaning (first run downloads a model)").set_defaults(f=cmd_index)
 
     sub.add_parser("doctor", help="check the setup").set_defaults(f=cmd_doctor)
 

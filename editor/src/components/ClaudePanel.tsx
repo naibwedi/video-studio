@@ -4,6 +4,15 @@ import { ChatEvent, useChat } from "../chat";
 import { fmtShort } from "../model";
 import { useStore } from "../store";
 
+const QUICK: [string, string][] = [
+  ["Review pacing", "Review the pacing of the whole video: look at it, then fix the weakest spots."],
+  ["Cut on the beat", "Look at the beat grid and move the cuts onto the beat, then check the result."],
+  ["Match footage to lyrics", "Go through the lyric lines and replace footage that does not fit the meaning of the line. Search by meaning."],
+  ["Gold karaoke lyrics", "Give the lyrics the gold karaoke style."],
+  ["Smart 9:16 crop", "Set the vertical crop of every shot so it follows the subject."],
+  ["Variety check", "Check that no footage is repeated back to back and the transitions vary sensibly."],
+  ["YouTube text", "Write the YouTube title, description and tags."],
+];
 const SUGGESTIONS = [
   "Review the pacing of the whole video",
   "Find better footage for the line under the playhead",
@@ -36,11 +45,21 @@ function describe(name: string, i: Record<string, any>): string {
     case "remove_popup": return `Removing pop-up ${i.popup}`;
     case "set_logo": return "Adjusting the corner logo";
     case "draft_shots": return i.dry ? "Planning a shot draft" : "Drafting a new shot list";
+    case "reorder_shot": return `Moving shot ${i.shot} to position ${i.to}`;
+    case "set_transition": return `Shot ${i.shot}: ${i.kind} transition`;
+    case "set_all_transitions": return `Every cut: ${i.kind}`;
+    case "set_text_style": return `Lyrics style${i.preset ? ": " + i.preset : ""}`;
+    case "beat_grid": return "Listening to the beat";
+    case "snap_cuts_to_beats": return "Moving cuts onto the beat";
+    case "auto_crop_vertical": return "Finding the best 9:16 crop";
+    case "search_by_meaning": return `Searching by meaning: "${i.query}"`;
+    case "youtube_pack": return "Writing the YouTube text";
+    case "auto_time_lyrics": return "Timing the lyrics from the singing";
     case "render": return `Starting ${i.action}${i.preview === false ? "" : " (preview)"}`;
     default: return name;
   }
 }
-const iconFor = (name: string) => (["get_project", "look", "contact_sheet", "check_project"].includes(name) ? <Eye size={13} /> : name === "search_clips" ? <Search size={13} /> : <Wrench size={13} />);
+const iconFor = (name: string) => (["get_project", "look", "contact_sheet", "check_project", "beat_grid"].includes(name) ? <Eye size={13} /> : (name === "search_clips" || name === "search_by_meaning") ? <Search size={13} /> : <Wrench size={13} />);
 
 /** Very small markdown: paragraphs, "- " lists, **bold**, `code`. Text is never inserted as HTML. */
 function Md({ text }: { text: string }) {
@@ -73,7 +92,7 @@ function ToolCard({ e, res }: { e: ChatEvent; res?: ChatEvent }) {
 
 export function ClaudePanel() {
   const name = useStore(s => s.name), hasDoc = useStore(s => s.doc !== null);
-  const { events, running, status, send, stop, reset } = useChat();
+  const { events, live, running, status, send, stop, reset } = useChat();
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +102,8 @@ export function ClaudePanel() {
     return events.filter(e => e.type === "user" || e.type === "text" || e.type === "tool" || (e.type === "done" && !e.ok && e.text))
       .map(e => ({ e, res: e.type === "tool" ? results.get(e.id!) : undefined }));
   }, [events]);
-  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [items.length, running]);
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [items.length, running, live]);
+  const lastTool = [...events].reverse().find(e => e.type === "tool" && !events.some(r => r.type === "tool_result" && r.id === e.id));
 
   const submit = (t: string) => { if (!t.trim() || running) return; setText(""); void send(t); };
   const unavailable = status && !status.available;
@@ -94,7 +114,7 @@ export function ClaudePanel() {
       <div className="ph">
         <Sparkles size={14} /> Claude co-editor
         <span className="grow" />
-        {running && <span className="chip running" style={{ textTransform: "none", letterSpacing: 0 }}><Loader2 size={11} className="spin" style={{ verticalAlign: -1 }} /> working</span>}
+        {running && <span className="chip running" style={{ textTransform: "none", letterSpacing: 0 }}><Loader2 size={11} className="spin" style={{ verticalAlign: -1 }} /> {lastTool ? describe(lastTool.name!, lastTool.input ?? {}) : live ? "writing" : "thinking"}</span>}
         <button className="ico ghost" title="Start a new conversation" disabled={running || !events.length} onClick={() => void reset()}><MessageSquarePlus size={14} /></button>
       </div>
       <div className="msgs">
@@ -120,9 +140,11 @@ export function ClaudePanel() {
           : e.type === "text" ? <div key={e.n} className="bubble ai"><Md text={e.text!} /></div>
           : e.type === "tool" ? <ToolCard key={e.n} e={e} res={res} />
           : <div key={e.n} className="note"><AlertTriangle size={14} /><span>{e.text}</span></div>)}
-        {running && <div className="typing"><i /><i /><i /></div>}
+        {live && <div className="bubble ai live"><Md text={live} /></div>}
+        {running && !live && <div className="typing"><i /><i /><i /></div>}
         <div ref={endRef} />
       </div>
+      <div className="quick">{QUICK.map(([label, prompt]) => <button key={label} className="ghost" disabled={!hasDoc || running || !!unavailable || needLogin} title={prompt} onClick={() => submit(prompt)}>{label}</button>)}</div>
       <form className="composer" onSubmit={ev => { ev.preventDefault(); submit(text); }}>
         <textarea rows={1} value={text} placeholder={unavailable ? "Claude is not available" : needLogin ? "Sign in first (see above)" : name ? "Ask Claude to edit…" : "Open a video first"} disabled={!hasDoc || !!unavailable || needLogin}
           onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(text); } e.stopPropagation(); }} />
