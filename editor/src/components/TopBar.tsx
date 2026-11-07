@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ClipboardCheck, ExternalLink, Film, FolderOpen, History, LayoutGrid, Loader2, Package, Plus, Redo2, Rocket, Save, Undo2, X, Youtube } from "lucide-react";
+import { Camera, ChevronDown, ClipboardCheck, Columns3, Expand, ExternalLink, Film, FolderOpen, History, LayoutGrid, Loader2, Maximize, Package, PanelLeftClose, PictureInPicture2, Plus, Redo2, Rocket, RotateCcw, Save, Undo2, X, Youtube } from "lucide-react";
 import { api } from "../api";
+import { closePopout, openPopout } from "../popout";
 import { useStore } from "../store";
+import { toggleAppFullscreen, togglePreviewFullscreen, useUI } from "../ui";
 import { Modal } from "./Fields";
 import { Home, Versions } from "./Library";
 
@@ -114,6 +116,33 @@ function JobsPill() {
   );
 }
 
+/** Layout: focus mode, full screen, pop-out, reset the panel sizes. */
+function ViewMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useOutside(open, () => setOpen(false));
+  const focus = useUI(s => s.focus), popped = useUI(s => s.popped), full = useUI(s => s.fullscreen);
+  const go = (f: () => void) => { setOpen(false); f(); };
+  const reset = () => {
+    Object.keys(localStorage).filter(k => k.startsWith("react-resizable-panels:studio.layout")).forEach(k => localStorage.removeItem(k));
+    location.reload();
+  };
+  return (
+    <div className="menu" ref={ref}>
+      <button className="ghost" onClick={() => setOpen(!open)} title="Layout and full screen"><Columns3 size={14} /><span className="lbl"> View</span></button>
+      {open && (
+        <div className="pop">
+          <button onClick={() => go(() => useUI.getState().setFocus(!focus))}><PanelLeftClose size={14} /> {focus ? "Show the side panels" : "Focus mode (hide side panels)"} <kbd style={{ marginLeft: "auto" }}>Z</kbd></button>
+          <button onClick={() => go(toggleAppFullscreen)}><Expand size={14} /> {full ? "Leave full screen" : "Whole editor full screen"} <kbd style={{ marginLeft: "auto" }}>Shift+F</kbd></button>
+          <button onClick={() => go(togglePreviewFullscreen)}><Maximize size={14} /> Preview full screen <kbd style={{ marginLeft: "auto" }}>F</kbd></button>
+          <button onClick={() => go(() => (popped ? closePopout() : openPopout()))}><PictureInPicture2 size={14} /> {popped ? "Bring the preview back" : "Preview in its own window"}</button>
+          <div style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
+          <button onClick={() => go(reset)}><RotateCcw size={14} /> Reset panel sizes</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TopBar() {
   const { projects, name, dirty, hist, fut } = useStore();
   const [newOpen, setNewOpen] = useState(false), [versions, setVersions] = useState(false);
@@ -134,6 +163,7 @@ export function TopBar() {
       <button className="ghost" onClick={() => setVersions(true)} title="Earlier versions and templates" disabled={!name}><History size={14} /></button>
       <label className="dim row" style={{ fontSize: 11.5, gap: 4 }} title="Saves 4 seconds after your last change"><input type="checkbox" checked={autosave} onChange={e => s.setAutosave(e.target.checked)} />autosave{savedAt && autosave && !dirty ? " ✓" : ""}</label>
       <span className="grow" />
+      <ViewMenu />
       <JobsPill />
       <RenderMenu />
       <a className="dim" href="/classic" style={{ fontSize: 11.5, textDecoration: "none" }} title="The older form-based dashboard">Classic</a>

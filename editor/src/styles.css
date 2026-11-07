@@ -17,10 +17,47 @@ svg { flex: none; }
 .dim { color: var(--dim); } .mono { font-family: var(--mono); } .gold { color: var(--gold); } .grow { flex: 1; } .row { display: flex; align-items: center; gap: 8px; }
 
 /* layout */
-.app { height: 100vh; display: grid; overflow: hidden;
-  grid-template-rows: 46px minmax(0, 1fr) var(--tlh, 330px); grid-template-columns: 296px minmax(0, 1fr) 320px;
-  grid-template-areas: "top top top" "bin prev insp" "tl tl tl"; }
-.top { grid-area: top; } .bin { grid-area: bin; } .prev { grid-area: prev; } .insp { grid-area: insp; } .tl { grid-area: tl; }
+.app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+.top { flex: none; height: 46px; } .workspace { flex: 1; min-height: 0; min-width: 0; }
+.workspace > [data-panel-group], .workspace [data-panel] > section, .workspace [data-panel] > aside { height: 100%; }
+.workspace [data-panel] { min-width: 0; min-height: 0; overflow: hidden; }
+.bin, .insp, .claude, .tl, .prev { height: 100%; }
+
+/* resize grips */
+.grip { position: relative; flex: none; background: var(--line); transition: background .12s; z-index: 20; }
+.grip.h { width: 3px; cursor: col-resize; } .grip.v { height: 3px; cursor: row-resize; }
+.grip::after { content: ""; position: absolute; inset: -4px; }
+.grip:hover, .grip[data-resize-handle-state="drag"] { background: var(--gold); }
+
+/* medium / narrow */
+.tabbar { display: flex; flex: none; background: var(--panel2); border-bottom: 1px solid var(--line); }
+.tabbar button { flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--dim); height: 36px; border-bottom: 2px solid transparent; }
+.tabbar button.on { color: var(--gold2); border-bottom-color: var(--gold); background: #1a2350; }
+.drawer { height: 100%; display: flex; flex-direction: column; min-height: 0; } .drawer-body { flex: 1; min-height: 0; } .drawer-body > * { height: 100%; }
+.narrow { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.narrow-prev { flex: none; height: 40%; min-height: 190px; max-height: 52%; border-bottom: 1px solid var(--line2); }
+.narrow-prev .stage { padding: 6px; }
+.narrow-body { flex: 1; min-height: 0; } .narrow-body > * { height: 100%; }
+.narrow .tabbar { order: 2; border-top: 1px solid var(--line); border-bottom: 0; } .narrow .tabbar button { height: 44px; flex-direction: column; gap: 1px; font-size: 11px; }
+.narrow .tabbar button.on { border-bottom-color: transparent; box-shadow: inset 0 2px 0 var(--gold); }
+.narrow .narrow-body { order: 1; }
+
+/* full screen + pop-out window */
+.prev:fullscreen { background: #000; } .prev:fullscreen .stage { padding: 0; } .prev:fullscreen .transport { opacity: 0; transition: opacity .25s; position: absolute; left: 0; right: 0; bottom: 0; } .prev:fullscreen:hover .transport { opacity: 1; }
+.popout { position: fixed; inset: 0; } .popout .prev { height: 100%; }
+
+@media (max-width: 1100px) { .top .lbl, .brand span:not(.mark), .top label.dim { display: none; } .top select { max-width: 140px; } }
+@media (max-width: 1100px) { .tl-hint { display: none; } }
+.tl-bar { overflow-x: auto; scrollbar-width: none; } .tl-bar > * { flex: none; }
+@media (max-width: 800px) {
+  .popbtn, .transport .lbl { display: none; } .transport { overflow: hidden; } .transport .seg button { padding: 4px 7px; }
+  .top { overflow-x: auto; gap: 6px; padding: 0 8px; scrollbar-width: none; } .top::-webkit-scrollbar { display: none; }
+  .top > * { flex: none; } .top .menu .pop { position: fixed; right: 8px; top: 50px; max-width: calc(100vw - 16px); }
+  .transport { gap: 4px; padding: 0 6px; } .tc { min-width: 0; font-size: 14px; } .tc .dim { display: none; }
+  button.ico { width: 34px; height: 34px; }
+  .home { padding: 12px; } .cards { grid-template-columns: 1fr 1fr; }
+}
+@media (pointer: coarse) { button { min-height: 32px; } .grip.h { width: 6px; } .grip.v { height: 6px; } }
 
 /* buttons + fields */
 button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--raise); border: 1px solid var(--line); border-radius: 7px; padding: 4px 10px; cursor: pointer; transition: background .12s, border-color .12s; white-space: nowrap; }

@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
-import { ClaudePanel } from "./components/ClaudePanel";
 import { Modal } from "./components/Fields";
-import { Inspector } from "./components/Inspector";
-import { MediaBin } from "./components/MediaBin";
-import { Preview } from "./components/Preview";
-import { Timeline } from "./components/Timeline";
 import { TopBar } from "./components/TopBar";
+import { Workspace } from "./components/Workspace";
 import { useChat } from "./chat";
 import { deleteShot, splitAt } from "./model";
+import { startMirror } from "./popout";
 import { useStore } from "./store";
+import { toggleAppFullscreen, togglePreviewFullscreen, useUI } from "./ui";
 
 const SHORTCUTS: [string, string][] = [
   ["Space", "Play / pause"], ["K  /  L  /  J", "Pause / play (press L again to speed up) / back 2 s"], ["← →", "One frame (Shift: one second)"], ["Home / End", "Go to start / end"],
   ["S", "Cut the shot under the playhead"], ["C  /  V", "Razor tool / select tool"], ["Delete", "Delete the selected shot, lyric line or card"],
-  ["Ctrl + wheel", "Zoom the timeline"], ["+  -  \\", "Zoom in / out / fit"], ["Ctrl+Z  Ctrl+Y", "Undo / redo"], ["Ctrl+S", "Save"], ["Esc", "Deselect"], ["?", "This list"],
+  ["Ctrl + wheel", "Zoom the timeline"], ["+  -  \\", "Zoom in / out / fit"], ["F  /  Shift+F", "Preview full screen / whole editor full screen"], ["Z", "Focus mode: hide the side panels"], ["Ctrl+Z  Ctrl+Y", "Undo / redo"], ["Ctrl+S", "Save"], ["Esc", "Deselect"], ["?", "This list"],
 ];
 
 export function App() {
@@ -22,8 +20,7 @@ export function App() {
   const busy = useChat(s => s.running);
 
   useEffect(() => {
-    const h = localStorage.getItem("studio.tlh");
-    if (h) (document.querySelector(".app") as HTMLElement).style.setProperty("--tlh", h + "px");
+    startMirror();
     void useStore.getState().init();
   }, []);
 
@@ -51,7 +48,7 @@ export function App() {
         case "?": setHelp(true); break;
         case "+": case "=": s.setPpx(s.ppx * 1.4); break;
         case "-": case "_": s.setPpx(s.ppx / 1.4); break;
-        case "\\": s.setPpx((window.innerWidth - 150) / s.doc.duration); break;
+        case "\\": s.setPpx((((document.querySelector(".tl-scroll") as HTMLElement | null)?.clientWidth ?? window.innerWidth - 150) - 10) / s.doc.duration); break;
         case "Delete": case "Backspace": {
           const sel = s.sel; if (!sel) break;
           e.preventDefault();
@@ -70,6 +67,8 @@ export function App() {
           else if (lower === "s") s.commit(d => splitAt(d, s.t));
           else if (lower === "c") s.setTool("razor");
           else if (lower === "v") s.setTool("select");
+          else if (lower === "f") e.shiftKey ? toggleAppFullscreen() : togglePreviewFullscreen();
+          else if (lower === "z") useUI.getState().setFocus(!useUI.getState().focus);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -79,10 +78,7 @@ export function App() {
   return (
     <div className={"app" + (busy ? " busy" : "")}>
       <TopBar />
-      <MediaBin />
-      <Preview />
-      <div className="rightcol"><Inspector /><ClaudePanel /></div>
-      <Timeline />
+      <Workspace />
       {!loaded && <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none", color: "var(--dim)" }}>Loading your video…</div>}
       <div className="toasts">{toasts.map(t => <div key={t.id} className={"toast " + t.kind}>{t.msg}</div>)}</div>
       {help && (

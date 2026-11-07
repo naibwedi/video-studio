@@ -189,12 +189,6 @@ export function Timeline() {
 
   return (
     <section className="tl">
-      <div className="split" onPointerDown={e => {
-        e.preventDefault(); const root = document.querySelector(".app") as HTMLElement; const y0 = e.clientY, h0 = parseFloat(getComputedStyle(root).getPropertyValue("--tlh")) || 330;
-        const mv = (ev: PointerEvent) => { const h = clamp(h0 + (y0 - ev.clientY), 190, window.innerHeight * 0.7); root.style.setProperty("--tlh", h + "px"); localStorage.setItem("studio.tlh", String(h)); };
-        const up = () => { window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); };
-        window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
-      }} />
       <div className="tl-bar">
         <button className={"ico" + (tool === "select" ? " on" : " ghost")} title="Select (V)" onClick={() => setTool("select")}><MousePointer2 size={15} /></button>
         <button className={"ico" + (tool === "razor" ? " on" : " ghost")} title="Razor: click a shot to cut it (C)" onClick={() => setTool("razor")}><Scissors size={15} /></button>
@@ -210,7 +204,7 @@ export function Timeline() {
         <button className="ico ghost" title="Zoom in (+)" onClick={() => setPpx(ppx * 1.4)}><ZoomIn size={15} /></button>
         <button className="ico ghost" title="Fit the whole video (\\)" onClick={fit}><Maximize2 size={15} /></button>
         <span className="grow" />
-        <span className="dim mono" style={{ fontSize: 11.5 }}>{doc.shots.length} shots · {doc.lines.length} lines · drag a shot to reorder · Ctrl+wheel zoom · S cut</span>
+        <span className="dim mono tl-hint" style={{ fontSize: 11.5, whiteSpace: "nowrap" }}>{doc.shots.length} shots · {doc.lines.length} lines · drag a shot to reorder · Ctrl+wheel zoom · S cut</span>
       </div>
       <div className="tl-wrap">
         <div className="tl-labels" style={{ height: TOTAL }}>

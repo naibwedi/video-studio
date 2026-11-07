@@ -94,6 +94,17 @@ pop-ups, grade) so *New video* can start from it. The **Videos** button shows al
 **Publish-ready.** *Render > Export everything* builds both sizes with sound, the CapCut set (silent video, MP3, SRT), thumbnails and the YouTube text in one go.
 *YouTube title, description, tags* writes `exports/<video>/YouTube/youtube.txt` (lyrics with times included). It is a draft to paste, nothing is uploaded.
 
+### Any screen, full screen, second monitor (v0.8)
+
+**Resize.** Drag the thin bars between the panels (Media, preview, Inspector, Claude, timeline). Sizes are remembered; *View > Reset panel sizes* starts over. **The layout follows the window:** wide (over 1280 px) shows all panels; medium (800-1280 px) shows the preview and the timeline with one tabbed drawer
+(Media, Inspector, Claude) on the right; narrow (a phone or a small window) shows the preview on top and one tab at a time below (Timeline, Media, Inspector, Claude).
+
+**Full screen.** `F` makes the preview fill the screen (or double-click the picture; the controls appear when you move the mouse; Esc leaves). `Shift+F` makes the whole editor full screen.
+`Z` is **focus mode**: the side panels fold away so only the preview and the timeline remain. All of these are also in the *View* menu.
+
+**Second monitor.** The button next to full screen (or *View > Preview in its own window*) opens the preview in its own browser window. Drag it to the other screen. It follows the
+main window (project, time, play, 16:9 / 9:16) and its play, seek and aspect buttons control the main window. The sound still comes from the main window. Allow pop-ups for the page if the browser blocks it.
+
 ### Claude, your co-editor
 
 The panel on the right is Claude working **inside** your edit. Ask in plain words, with the playhead where you mean:
