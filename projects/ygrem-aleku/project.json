@@ -1,0 +1,83 @@
+{
+ "title": "ይግረም ኣለኹ",
+ "audio": "audio/ygrem-aleku-0m18-1m25.wav",
+ "sizes": [
+  "16x9",
+  "9x16"
+ ],
+ "theme": [],
+ "subtitles": {
+  "lines": [
+   {
+    "text": "ይግረም ኣለኹ ብኣኻ",
+    "start": 3.98,
+    "end": 9.18
+   },
+   {
+    "text": "ንጉሰይ ፍሉይ 'ዩ ስራሕካ",
+    "start": 9.58,
+    "end": 14.68
+   },
+   {
+    "text": "ሂወት ከሞ ዘይብለይ ርኢኻ",
+    "start": 14.92,
+    "end": 20.56
+   },
+   {
+    "text": "ሂወትካ ሂብካዮ ንባርያኻ",
+    "start": 20.7,
+    "end": 26.16
+   },
+   {
+    "text": "ይድነቕ ኣለኹ ብኣኻ",
+    "start": 26.3,
+    "end": 30.96
+   },
+   {
+    "text": "ክርስቶስ ግሩም'ዩ ግብርኻ",
+    "start": 31.94,
+    "end": 37.04
+   },
+   {
+    "text": "ወገን ከም ዘይብለይ ርኢኻ",
+    "start": 37.52,
+    "end": 40.9
+   },
+   {
+    "text": "ካብ ዙፋን ወሪድካ ንባርያኻ",
+    "start": 43.04,
+    "end": 48.3
+   }
+  ],
+  "style": {
+   "preset": "gold",
+   "color": "#F5EBD0",
+   "active": "#E9BE5C",
+   "outline": 3.0,
+   "outline_color": "#000000",
+   "scale": 1.0,
+   "position": "bottom",
+   "karaoke": true
+  }
+ },
+ "overlays": {
+  "logo": {
+   "image": "library/brand/logo.jpg",
+   "in": 3.0,
+   "out": null
+  },
+  "title_card": {
+   "text": "ይግረም ኣለኹ",
+   "subtitle": "",
+   "in": 1.0,
+   "out": 6.0
+  },
+  "popups": [],
+  "end_card": null
+ },
+ "shots": [],
+ "channel": {
+  "name": "ሰብአ ሰገል",
+  "handle": "@ሰብአሰገልThemagis"
+ }
+}
