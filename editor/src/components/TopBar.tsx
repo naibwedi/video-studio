@@ -26,7 +26,7 @@ function NewVideo({ onClose }: { onClose: () => void }) {
     <Modal title="New video from a song" onClose={onClose}>
       <p className="dim" style={{ marginTop: 0 }}>Name: letters, numbers, - or _. The song (WAV or MP3) is copied into the project.</p>
       <div className="row" style={{ marginBottom: 10 }}>
-        <input type="text" placeholder="short-name" value={name} onChange={e => setName(e.target.value)} />
+        <input type="text" placeholder="short-name" value={name} onChange={e => setName(e.target.value.replace(/\s+/g, "-").replace(/[^A-Za-z0-9_-]/g, ""))} />
         <input type="text" placeholder="Title shown in the video" value={title} onChange={e => setTitle(e.target.value)} />
       </div>
       <input type="file" accept="audio/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
