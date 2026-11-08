@@ -19,6 +19,7 @@ interface State {
   t: number; seekId: number; playing: boolean; rate: number;
   ppx: number; aspect: "16x9" | "9x16"; snap: boolean; tool: Tool; snapLine: number | null;
   clips: Clip[]; jobs: Job[]; toasts: Toast[]; peaks: number[];
+  rev: string; conflict: boolean;
   beats: Beats | null; showBeats: boolean; autosave: boolean; editedAt: number; savedAt: number | null; home: boolean;
   setShowBeats(v: boolean): void; setAutosave(v: boolean): void; setHome(v: boolean): void;
   init(): Promise<void>;
@@ -26,7 +27,7 @@ interface State {
   reloadDoc(pushHistory: boolean): Promise<void>;
   commit(fn: (d: Doc) => Doc): void;
   beginTx(): void; liveEdit(fn: (base: Doc) => Doc): void; endTx(): void;
-  undo(): void; redo(): void; save(auto?: boolean): Promise<void>;
+  undo(): void; redo(): void; save(auto?: boolean, force?: boolean): Promise<void>;
   setSel(s: Sel): void;
   setT(t: number): void; seek(t: number): void; setPlaying(p: boolean): void; togglePlay(): void; setRate(r: number): void;
   setPpx(p: number): void; setAspect(a: "16x9" | "9x16"): void; setSnap(v: boolean): void; setTool(t: Tool): void; setSnapLine(x: number | null): void;
@@ -40,6 +41,7 @@ export const useStore = create<State>((set, get) => ({
   projects: [], name: null, doc: null, saved: null, notes: [], dirty: false, hist: [], fut: [], tx: null, sel: null,
   t: 0, seekId: 0, playing: false, rate: 1, ppx: 14, aspect: "16x9", snap: true, tool: "select", snapLine: null,
   clips: [], jobs: [], toasts: [], peaks: [],
+  rev: "", conflict: false,
   beats: null, showBeats: false, autosave: localStorage.getItem("studio.autosave") !== "0", editedAt: 0, savedAt: null, home: false,
   setShowBeats(showBeats) { set({ showBeats }); },
   setAutosave(autosave) { localStorage.setItem("studio.autosave", autosave ? "1" : "0"); set({ autosave }); },
@@ -56,7 +58,7 @@ export const useStore = create<State>((set, get) => ({
       setInterval(() => void get().pollJobs(), 2500);
       setInterval(() => {                                     // autosave: 4 s after the last change, never in the middle of a drag
         const g = get();
-        if (g.autosave && g.dirty && !g.tx && g.name && Date.now() - g.editedAt > 4000) void g.save(true);
+        if (g.autosave && g.dirty && !g.conflict && !g.tx && g.name && Date.now() - g.editedAt > 4000) void g.save(true);
       }, 1500);
     } catch (e: any) { get().toast("Could not reach the studio server: " + e.message, "bad"); }
   },
@@ -68,7 +70,7 @@ export const useStore = create<State>((set, get) => ({
       const doc = fromPayload(d);
       const vw = Math.max(600, window.innerWidth - 220);
       set({ name, doc, saved: doc, notes: d.notes || [], dirty: false, hist: [], fut: [], tx: null, sel: null, t: 0, seekId: get().seekId + 1, playing: false,
-        ppx: clamp(vw / Math.max(10, doc.duration), 2, 200), peaks: [], beats: null, home: false, savedAt: null });
+        ppx: clamp(vw / Math.max(10, doc.duration), 2, 200), peaks: [], beats: null, home: false, savedAt: null, rev: d.rev || "", conflict: false });
       localStorage.setItem("studio.project", name);
       api<any>(`/api/peaks/${name}`).then(p => { if (get().name === name) set({ peaks: p.peaks }); }).catch(() => {});
       api<Beats>(`/api/beats/${name}`).then(b => { if (get().name === name) set({ beats: b }); }).catch(() => {});
@@ -87,7 +89,7 @@ export const useStore = create<State>((set, get) => ({
         if (key) { const i = (doc as any)[key].findIndex((x: any) => x.id === sel.id); if (i >= 0 && (next as any)[key][i]) nsel = { kind: sel.kind, id: (next as any)[key][i].id }; }
         else if (sel.kind === "title" || sel.kind === "end" || sel.kind === "logo") nsel = sel;
       }
-      set({ doc: next, saved: next, notes: d.notes || [], dirty: false, hist: pushHistory && doc ? [...hist.slice(-80), doc] : hist, fut: [], sel: nsel });
+      set({ rev: d.rev || "", conflict: false, doc: next, saved: next, notes: d.notes || [], dirty: false, hist: pushHistory && doc ? [...hist.slice(-80), doc] : hist, fut: [], sel: nsel });
     } catch { /* keep what we have */ }
   },
 
@@ -106,14 +108,17 @@ export const useStore = create<State>((set, get) => ({
   undo() { const { hist, doc, fut } = get(); if (!hist.length || !doc) return; const prev = hist[hist.length - 1]; set({ doc: prev, hist: hist.slice(0, -1), fut: [...fut, doc], dirty: prev !== get().saved }); },
   redo() { const { hist, doc, fut } = get(); if (!fut.length || !doc) return; const nxt = fut[fut.length - 1]; set({ doc: nxt, fut: fut.slice(0, -1), hist: [...hist, doc], dirty: nxt !== get().saved }); },
 
-  async save(auto = false) {
-    const { name, doc } = get(); if (!name || !doc) return;
+  async save(auto = false, force = false) {
+    const { name, doc, rev } = get(); if (!name || !doc) return;
     try {
-      const d = await api<any>(`/api/project/${name}/save`, { ...toSave(doc), auto });
+      const d = await api<any>(`/api/project/${name}/save`, { ...toSave(doc), auto, rev, force });
       if (get().doc === doc) set({ dirty: false });                     // edits made while saving stay unsaved
-      set({ saved: doc, notes: d.notes || [], savedAt: Date.now() });
+      set({ saved: doc, notes: d.notes || [], savedAt: Date.now(), rev: d.rev || "", conflict: false });
       if (!auto) get().toast("Saved. Older versions are kept under Versions.", "ok");
-    } catch (e: any) { if (!auto) get().toast("Could not save: " + e.message, "bad"); }
+    } catch (e: any) {
+      if (/changed outside the editor/.test(e.message)) set({ conflict: true });      // the banner in the top bar lets you reload or keep your version
+      else if (!auto) get().toast("Could not save: " + e.message, "bad");
+    }
   },
 
   setSel(sel) { set({ sel }); },

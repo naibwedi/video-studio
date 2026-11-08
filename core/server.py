@@ -97,11 +97,19 @@ def export_files(name):
     return sorted(out, key=lambda x: -x["time"])
 
 
+def project_rev(name):
+    """Changes whenever project.json changes on disk. The editor sends it back when saving, so a stale editor cannot overwrite newer work."""
+    try:
+        return str(os.stat(project.json_path(name)).st_mtime_ns)
+    except OSError:
+        return ""
+
+
 def project_payload(name):
     raw = json.load(open(project.json_path(name), encoding="utf-8"))
     p = project.load(name)
     tags = draft.load()
-    return {"name": name, "raw": raw, "duration": p["duration"], "title": p["title"],
+    return {"name": name, "rev": project_rev(name), "raw": raw, "duration": p["duration"], "title": p["title"],
             "shots": [{"at": s["at"], "clip": s["clip"], "start": s["start"], "pan": s["pan"], "transition": s["transition"],
                        "tags": tags.get(s["clip"], {}).get("tags", [])} for s in p["_shots"]],
             "exports": export_files(name), "audio": os.path.basename(p["_audio"]), "channel": p["channel"], "overlays": p["overlays"],
@@ -373,6 +381,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if m := re.fullmatch(r"/api/project/([\w-]+)/save", path):
                 data = self.body_json()
+                if data.get("rev") and not data.get("force") and data["rev"] != project_rev(m[1]):
+                    return self.send_json({"error": "This video was changed outside the editor (Claude or the terminal).", "conflict": True}, 409)
                 save_project(m[1], data)
                 versions.snapshot(m[1], "auto" if data.get("auto") else "saved")
                 return self.send_json(project_payload(m[1]))

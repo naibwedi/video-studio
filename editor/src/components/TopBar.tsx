@@ -146,7 +146,7 @@ function ViewMenu() {
 export function TopBar() {
   const { projects, name, dirty, hist, fut } = useStore();
   const [newOpen, setNewOpen] = useState(false), [versions, setVersions] = useState(false);
-  const home = useStore(st => st.home), savedAt = useStore(st => st.savedAt), autosave = useStore(st => st.autosave);
+  const conflict = useStore(st => st.conflict), home = useStore(st => st.home), savedAt = useStore(st => st.savedAt), autosave = useStore(st => st.autosave);
   const s = useStore.getState();
   return (
     <header className="top">
@@ -167,6 +167,13 @@ export function TopBar() {
       <JobsPill />
       <RenderMenu />
       <a className="dim" href="/classic" style={{ fontSize: 11.5, textDecoration: "none" }} title="The older form-based dashboard">Classic</a>
+      {conflict && (
+        <div className="conflict" role="alert">
+          This video was changed outside the editor (Claude or the terminal).
+          <button onClick={() => void s.reloadDoc(true)}>Load the new version</button>
+          <button className="danger" onClick={() => void s.save(false, true)}>Keep mine and save</button>
+        </div>
+      )}
       {newOpen && <NewVideo onClose={() => setNewOpen(false)} />}
       {versions && <Versions onClose={() => setVersions(false)} />}
       {home && <Home onNew={() => setNewOpen(true)} />}
