@@ -4,7 +4,7 @@ A 'doc' is the same shape the editor works with: numeric times in seconds, shots
 Indices in the operations are 1-based ("shot 5", "line 3"), as they appear in the editor.
 """
 import json, os, re
-from . import draft, paths, project, textstyle
+from . import draft, fx, paths, project, textstyle
 
 MIN_SHOT = 0.5
 
@@ -26,8 +26,14 @@ def save_project(name, data):
                         "start": float(s.get("start", 0)), "pan": float(s.get("pan", 0.5))}
                 if s.get("transition") in project.TRANSITIONS and s["transition"] != "fade":
                     item["transition"] = s["transition"]
+                if s.get("look") in fx.LOOKS:
+                    item["look"] = s["look"]
+                if s.get("move") in fx.MOVES:
+                    item["move"] = s["move"]
                 shots.append(item)
             raw["shots"] = shots
+        if "fx" in data:
+            raw["fx"] = fx.clean(data["fx"])
         if "subs" in data:
             raw.setdefault("subtitles", {})["style"] = textstyle.clean(data["subs"])
         if "lines" in data:
@@ -72,7 +78,7 @@ def save_project(name, data):
 def load_doc(name):
     p = project.load(name)
     shots = [{"at": round(float(s["at"]), 2), "clip": str(s["clip"]), "start": round(float(s["start"]), 2), "pan": round(float(s["pan"]), 2),
-              "transition": s["transition"]} for s in p["_shots"]]
+              "transition": s["transition"], "look": s.get("look") or "", "move": s.get("move") or ""} for s in p["_shots"]]
     if shots:
         shots[0]["at"] = 0.0
     lines = []
@@ -86,7 +92,7 @@ def load_doc(name):
               else {"at": float(e["at"]), "dur": float(e.get("dur", 5)), "click": float(e.get("click", 2.6)), "tagline": e.get("tagline", "Subscribe for more mezmur")}
               for e in (ov.get("popups") or [])]
     return {"title": p["title"], "theme": " ".join(p.get("theme") or []), "duration": float(p["duration"]), "shots": shots, "lines": lines,
-            "channel": dict(p["channel"]), "subs": textstyle.clean(p["subtitles"].get("style")),
+            "channel": dict(p["channel"]), "subs": textstyle.clean(p["subtitles"].get("style")), "fx": fx.clean(p.get("fx")),
             "overlays": {"logo": {"in": (ov.get("logo") or {}).get("in"), "out": (ov.get("logo") or {}).get("out")},
                          "title_card": dict(ov["title_card"]) if ov.get("title_card") else None,
                          "end_card": dict(ov["end_card"]) if ov.get("end_card") else None, "popups": popups}}
@@ -94,7 +100,7 @@ def load_doc(name):
 
 def save_doc(name, doc):
     save_project(name, {"title": doc["title"], "theme": doc["theme"], "shots": doc["shots"], "lines": doc["lines"], "channel": doc["channel"],
-                        "overlays": doc["overlays"], "subs": doc.get("subs") or textstyle.DEFAULT})
+                        "overlays": doc["overlays"], "subs": doc.get("subs") or textstyle.DEFAULT, "fx": doc.get("fx") or fx.DEFAULT_FX})
 
 
 def edit(name, fn):
@@ -142,7 +148,7 @@ def fmt(t):
 def describe_shot(doc, i):
     s = doc["shots"][i]
     tags = draft.load().get(s["clip"], {}).get("tags", [])
-    return f"shot {i + 1}: #{s['clip']} {fmt(s['at'])}-{fmt(shot_end(doc, i))} ({shot_end(doc, i) - s['at']:.1f}s) from {s['start']}s into the clip, pan {s['pan']}" + (f", enters with '{s['transition']}'" if i and s.get("transition", "fade") != "fade" else "") + (f" [{' '.join(tags[:5])}]" if tags else "")
+    return f"shot {i + 1}: #{s['clip']} {fmt(s['at'])}-{fmt(shot_end(doc, i))} ({shot_end(doc, i) - s['at']:.1f}s) from {s['start']}s into the clip, pan {s['pan']}" + (f", enters with '{s['transition']}'" if i and s.get("transition", "fade") != "fade" else "") + (f", look {s['look']}" if s.get("look") else "") + (f", move {s['move']}" if s.get("move") else "") + (f" [{' '.join(tags[:5])}]" if tags else "")
 
 
 def describe_line(doc, i):
@@ -353,7 +359,7 @@ def set_all_transitions(doc, kind):
     return f"Every cut now uses '{kind}'."
 
 
-def set_text_style(doc, preset=None, color=None, active=None, outline=None, scale=None, position=None, karaoke=None):
+def set_text_style(doc, preset=None, color=None, active=None, outline=None, scale=None, position=None, karaoke=None, glow=None, reveal=None):
     """Change how the lyrics look. preset: classic, gold, karaoke, soft, bold (then individual fields override it)."""
     st = dict(doc.get("subs") or textstyle.DEFAULT)
     if preset is not None:
@@ -361,7 +367,7 @@ def set_text_style(doc, preset=None, color=None, active=None, outline=None, scal
             raise ValueError(f"preset must be one of: {', '.join(textstyle.PRESETS)}")
         st.update(textstyle.PRESETS[preset])
         st["preset"] = preset
-    for k, v in (("color", color), ("active", active), ("outline", outline), ("scale", scale), ("position", position), ("karaoke", karaoke)):
+    for k, v in (("color", color), ("active", active), ("outline", outline), ("scale", scale), ("position", position), ("karaoke", karaoke), ("glow", glow), ("reveal", reveal)):
         if v is not None:
             st[k] = v
             if preset is None:
@@ -369,3 +375,39 @@ def set_text_style(doc, preset=None, color=None, active=None, outline=None, scal
     doc["subs"] = textstyle.clean(st)
     s = doc["subs"]
     return f"Lyrics: {s['preset']} style, {'karaoke sweep' if s['karaoke'] else 'no sweep'}, {s['position']}, size x{s['scale']}, text {s['color']}" + (f", sung colour {s['active']}" if s["karaoke"] else "") + "."
+
+
+# ---------------------------------------------------------------- effects (look, move, glow, dust, flashes, beat pulse)
+def set_look(doc, shot, look):
+    """A colour look for one shot: warm, night, film, mono, dramatic, dawn, or 'none'."""
+    s = _item(doc, "shots", shot)
+    if look in ("none", "", None):
+        s["look"] = ""
+        return f"Shot {shot} uses the normal colours."
+    if look not in fx.LOOKS:
+        raise ValueError(f"look must be one of: {', '.join(fx.LOOKS)}, none")
+    s["look"] = look
+    return f"Shot {shot} now has the '{look}' look ({fx.LOOKS[look][0]})."
+
+
+def set_move(doc, shot, move):
+    """The camera move of one 16:9 shot: in, out, left, right, up, still, or 'default'."""
+    s = _item(doc, "shots", shot)
+    if move in ("default", "", None):
+        s["move"] = ""
+        return f"Shot {shot} uses the default slow drift."
+    if move not in fx.MOVES:
+        raise ValueError(f"move must be one of: {', '.join(fx.MOVES)}, default")
+    s["move"] = move
+    return f"Shot {shot} now moves: {fx.MOVES[move]}."
+
+
+def set_fx(doc, glow=None, dust=None, pulse=None, flash=None):
+    """Project-wide effects: glow 0-1 (soft bloom), dust on/off (drifting light specks), pulse 0-0.12 (brightness pulse on bar starts), flash = list of seconds (a warm light flash)."""
+    cur = dict(doc.get("fx") or fx.DEFAULT_FX)
+    for k, v in (("glow", glow), ("dust", dust), ("pulse", pulse), ("flash", flash)):
+        if v is not None:
+            cur[k] = v
+    doc["fx"] = fx.clean(cur)
+    f = doc["fx"]
+    return f"Effects: glow {f['glow']}, dust {'on' if f['dust'] else 'off'}, beat pulse {f['pulse']}, {len(f['flash'])} light flashes."

@@ -24,6 +24,7 @@ DEFAULTS = {
         "popups": [],
         "popup_style": "native",
     },
+    "fx": {"glow": 0.0, "dust": False, "pulse": 0.0, "flash": []},
     "shots": [],
 }
 SIZES = {"16x9": (1920, 1080), "9x16": (1080, 1920)}
@@ -104,7 +105,7 @@ def at_time(value, lines):
 def resolve_shot(p, s, lines):
     return {"at": at_time(s["at"], lines), "file": resolve_clip(p, s["clip"]), "clip": str(s["clip"]),
             "start": float(s.get("start", 0)), "pan": float(s.get("pan", 0.5)),
-            "motion": s.get("motion", "drift"),
+            "motion": s.get("motion", "drift"), "look": s.get("look") or None, "move": s.get("move") or None,
             "transition": s.get("transition") if s.get("transition") in TRANSITIONS else "fade"}   # how this shot is entered from the previous one
 
 

@@ -33,7 +33,12 @@ def write_ass(p, size_name, W, H, path):
            f"Style: Lyric,{sub['font']},{fs},{textstyle.ass_colour(prim)},{textstyle.ass_colour(sec)},{textstyle.ass_colour(st['outline_color'])},&H80000000,"
            f"1,0,0,0,100,100,0,0,1,{st['outline']:g},1,{align},60,60,{mv},1\n",
            "[Events]\nFormat: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text"]
-    ass += [f"Dialogue: 0,{ts(l['start'] + pad, False)},{ts(l['end'] - pad, False)},Lyric,,0,0,0,,{{\\fad(250,250)}}"
+    pop = "\\fscx90\\fscy90\\t(0,450,\\fscx100\\fscy100)" if st["reveal"] else ""
+    if st["glow"]:        # a soft coloured halo under the text (the same words, blurred and tinted, on the layer below)
+        halo = textstyle.ass_colour(st["active"] if kara else st["color"])
+        ass += [f"Dialogue: 0,{ts(l['start'] + pad, False)},{ts(l['end'] - pad, False)},Lyric,,0,0,0,,{{\\fad(250,250){pop}\\1a&HFF&\\bord{max(8, st['outline'] * 2.4):g}\\blur9\\3c{halo}\\3a&H55&}}" + l["text"]
+                for l in sub["lines"]]
+    ass += [f"Dialogue: 1,{ts(l['start'] + pad, False)},{ts(l['end'] - pad, False)},Lyric,,0,0,0,,{{\\fad(250,250){pop}}}"
             + (textstyle.karaoke_text(l["text"], l["start"], l["end"], pad) if kara else l["text"]) for l in sub["lines"]]
     open(path, "w", encoding="utf-8").write("\n".join(ass))
 

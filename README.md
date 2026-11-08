@@ -105,6 +105,13 @@ pop-ups, grade) so *New video* can start from it. The **Videos** button shows al
 **Second monitor.** The button next to full screen (or *View > Preview in its own window*) opens the preview in its own browser window. Drag it to the other screen. It follows the
 main window (project, time, play, 16:9 / 9:16) and its play, seek and aspect buttons control the main window. The sound still comes from the main window. Allow pop-ups for the page if the browser blocks it.
 
+### Creative effects (v0.9)
+
+Pick a shot, then *Colour look* (warm gold, night blue, faded film, black and white, deep contrast, soft dawn) and *Camera move* (push in, pull out, drift left or right, rise, hold still).
+For the whole video, the *Effects* section of the Inspector has **glow** (soft bloom), **beat pulse** (a faint light pulse on each bar), **golden light dust**, and **light flashes** (put the playhead
+on a big moment and press *Light flash at playhead*). The lyrics can also **glow** and **grow in**. Effects appear in the render (Render > Quick preview), not in the editor's live preview.
+Claude can use all of this (`set_look`, `set_move`, `set_fx`, `set_text_style`).
+
 ### Claude, your co-editor
 
 The panel on the right is Claude working **inside** your edit. Ask in plain words, with the playhead where you mean:

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, ClipboardPaste, Crop, Plus, SlidersHorizontal, Trash2, Wand2 } from "lucide-react";
 import { thumbUrl, isLibraryClip } from "../api";
-import { SUB_PRESETS, SubStyle, TRANSITIONS, Line, deleteShot, fmtShort, moveShot, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, uid } from "../model";
+import { DEFAULT_FX, LOOKS, MOVES, SUB_PRESETS, SubStyle, TRANSITIONS, Line, deleteShot, fmtShort, moveShot, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, uid } from "../model";
 import { api } from "../api";
 import { useStore } from "../store";
 import { Modal, NumField, TextField } from "./Fields";
@@ -43,8 +43,10 @@ function LyricLook() {
           </button>
         ))}
       </div>
-      <div className="row" style={{ marginBottom: 8 }}>
+      <div className="row" style={{ marginBottom: 8, flexWrap: "wrap" }}>
         <label className="row dim" style={{ gap: 6 }}><input type="checkbox" checked={st.karaoke} onChange={e => set({ karaoke: e.target.checked })} /> Karaoke: words fill as they are sung</label>
+        <label className="row dim" style={{ gap: 6 }} title="A soft halo of light behind the words"><input type="checkbox" checked={!!st.glow} onChange={e => set({ glow: e.target.checked })} /> Glow</label>
+        <label className="row dim" style={{ gap: 6 }} title="Each line grows in softly as it appears"><input type="checkbox" checked={!!st.reveal} onChange={e => set({ reveal: e.target.checked })} /> Grow in</label>
       </div>
       <div className="grid2">
         <label className="field"><span>Text colour</span><input type="color" value={st.color} onChange={e => set({ color: e.target.value.toUpperCase() })} /></label>
@@ -55,6 +57,26 @@ function LyricLook() {
       <label className="field"><span>Outline ({st.outline})</span>
         <input type="range" min={0} max={10} step={1} value={st.outline} onChange={e => set({ outline: parseInt(e.target.value) })} /></label>
       <div className="seg">{(["bottom", "middle", "top"] as const).map(p => <button key={p} className={st.position === p ? "on" : ""} onClick={() => set({ position: p })}>{p}</button>)}</div>
+    </div>
+  );
+}
+
+function FxPanel() {
+  const doc = useStore(s => s.doc)!, commit = useStore(s => s.commit);
+  const fx = doc.fx ?? DEFAULT_FX;
+  const set = (p: Partial<typeof fx>) => commit(d => ({ ...d, fx: { ...(d.fx ?? DEFAULT_FX), ...p } }));
+  return (
+    <div>
+      <div className="sect">Effects (shown in the render, not in this preview)</div>
+      <label className="field"><span>Glow: soft bloom on bright parts ({Math.round(fx.glow * 100)}%)</span>
+        <input type="range" min={0} max={1} step={0.05} value={fx.glow} onChange={e => set({ glow: parseFloat(e.target.value) })} /></label>
+      <label className="field"><span>Beat pulse: faint light pulse on each bar ({Math.round(fx.pulse * 1000) / 10}%)</span>
+        <input type="range" min={0} max={0.12} step={0.01} value={fx.pulse} onChange={e => set({ pulse: parseFloat(e.target.value) })} /></label>
+      <label className="row dim" style={{ gap: 6, marginBottom: 6 }}><input type="checkbox" checked={fx.dust} onChange={e => set({ dust: e.target.checked })} /> Drifting golden light dust</label>
+      <div className="row" style={{ flexWrap: "wrap" }}>
+        <button onClick={() => set({ flash: [...fx.flash, round2(useStore.getState().t)].sort((a, b) => a - b) })}><Plus size={14} /> Light flash at playhead</button>
+        {fx.flash.length > 0 && <button className="ghost" onClick={() => set({ flash: [] })}>Clear {fx.flash.length} flash{fx.flash.length > 1 ? "es" : ""}</button>}
+      </div>
     </div>
   );
 }
@@ -86,6 +108,7 @@ function ProjectPanel() {
           onClick={() => { if (confirm("Re-time all lyric lines from the singing? It takes a few minutes. You can undo it with Ctrl+Z afterwards.")) void useStore.getState().runJob("align"); }}><Wand2 size={14} /> Auto-time lyrics</button>
       </div>
       <LyricLook />
+      <FxPanel />
       <div className="sect">Vertical (9:16)</div>
       <div className="row"><button title="Looks at every shot and sets the 9:16 crop to follow what stands out" onClick={async () => {
         const st2 = useStore.getState(); if (st2.dirty) await st2.save();
@@ -131,6 +154,13 @@ function ShotPanel({ id }: { id: string }) {
           </select></label>
       )}
       {i > 0 && <button className="ghost" style={{ marginBottom: 8 }} onClick={() => commit(d => ({ ...d, shots: d.shots.map((x, n) => (n > 0 ? { ...x, transition: s.transition } : x)) }))}>Use this transition for every cut</button>}
+      <div className="sect">Look and movement (shown in the render)</div>
+      <div className="grid2">
+        <label className="field"><span>Colour look</span>
+          <select value={s.look ?? ""} onChange={e => commit(d => patchShot(d, id, { look: e.target.value }))}>{LOOKS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        <label className="field"><span>Camera move</span>
+          <select value={s.move ?? ""} onChange={e => commit(d => patchShot(d, id, { move: e.target.value }))}>{MOVES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      </div>
       <div className="sect">Order</div>
       <div className="row" style={{ marginBottom: 10 }}>
         <button disabled={i === 0} onClick={() => commit(d => moveShot(d, id, i - 1))}><ArrowLeft size={14} /> Earlier</button>

@@ -8,11 +8,11 @@ Change one shot -> only that segment is rendered again.
 import hashlib, json, os, subprocess, time
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
-from . import overlays, paths, popup as popmod
+from . import fx as fxm, overlays, paths, popup as popmod
 from .project import SIZES
 
 STILL = (".png", ".jpg", ".jpeg", ".webp")
-SEG_VERSION = "1"
+SEG_VERSION = "3"
 VARIANTS = ("full", "nosubs", "video_only")
 
 
@@ -64,7 +64,7 @@ def segment(p, shot, L, W, H, vertical):
     src = shot["file"]
     st = os.stat(src)
     key = hashlib.sha1(json.dumps([SEG_VERSION, paths.rel(src), st.st_size, int(st.st_mtime), shot["start"], round(L, 3), shot["pan"],
-                                   shot["motion"], shot.get("zoom"), W, H, fps, g], sort_keys=True).encode()).hexdigest()[:16]
+                                   shot["motion"], shot.get("zoom"), shot.get("look"), shot.get("move"), p["fx"].get("glow"), W, H, fps, g], sort_keys=True).encode()).hexdigest()[:16]
     out = os.path.join(paths.CACHE, "segments", key + ".mp4")
     if os.path.exists(out):
         return out, True
@@ -81,6 +81,8 @@ def segment(p, shot, L, W, H, vertical):
         d = 0.0 if motion == "static" else 0.06
         x = f"(iw-ow)*({pan - d / 2:.3f}+{d}*t/{L:.3f})"
         mv = f"scale=-2:{H}:flags=lanczos,setsar=1,crop={W}:{H}:x='{x}':y=0"
+    elif shot.get("move") and not still and fxm.move_filter(shot["move"], W, H, L):
+        mv = fxm.move_filter(shot["move"], W, H, L)
     elif still and motion != "static":
         z0, z1 = shot.get("zoom") or [1.04, 1.14]
         frames = int(L * fps) + 1
@@ -93,7 +95,12 @@ def segment(p, shot, L, W, H, vertical):
         mv = (f"scale={sx}:{sy}:flags=lanczos,setsar=1,crop={W}:{H}:x='(iw-ow)*(0.2+0.6*t/{L:.3f})':"
               f"y='(ih-oh)*(0.3+0.4*t/{L:.3f})'")
     tmp = out + ".tmp.mp4"
-    run(inp + ["-filter_complex", f"{pre}{mv},{grade_filter(g)},format=yuv420p[v]", "-map", "[v]", "-an",
+    body = f"{pre}{mv},{grade_filter(g)}"
+    if shot.get("look"):
+        body += "," + fxm.look_filter(shot["look"])
+    if p["fx"].get("glow"):
+        body += "," + fxm.glow_filter(p["fx"]["glow"])
+    run(inp + ["-filter_complex", f"{body},format=yuv420p[v]", "-map", "[v]", "-an",
                ] + vcodec("segment") + ["-pix_fmt", "yuv420p", "-r", str(fps), "-t", f"{L:.3f}", paths.rel(tmp)])
     os.replace(tmp, out)
     return out, False
@@ -192,6 +199,25 @@ def build(p, size_name, variant="full", preview=False):
     for k in range(1, n):
         fx.append(f"{prev}[{k}:v]xfade=transition={shots[k].get('transition', 'fade')}:duration={X}:offset={cuts[k] - X / 2:.3f}[x{k}]")
         prev = f"[x{k}]"
+
+    pf = p["fx"]
+    if pf.get("dust"):
+        dust = fxm.dust_video(W, H, fps)
+        add_input(["-stream_loop", "-1", "-i", paths.rel(dust)], "dust")
+        fx.append(f"{prev}format=gbrp[da];[{idx['dust']}:v]format=gbrp[db];[da][db]blend=all_mode=screen:all_opacity=0.55:shortest=1,format=yuv420p[dst]")
+        prev = "[dst]"
+    beats_t = []
+    if pf.get("pulse"):
+        try:
+            from . import beats as _beats
+            g = _beats.analyse(p["_name"])
+            beats_t = [b for b in (g.get("downbeats") or g.get("beats", [])[::4]) if b < dur][:90]
+        except Exception:
+            beats_t = []
+    light = fxm.light_expr(pf.get("flash") or [], beats_t, pf.get("pulse") or 0)
+    if light:
+        fx.append(f"{prev}eq=brightness='{light}':eval=frame[lit]")
+        prev = "[lit]"
 
     layers = []
     if "logo" in idx:

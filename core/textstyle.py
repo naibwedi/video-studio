@@ -5,7 +5,7 @@ The editor's preview (editor/src/engine/compositor.ts) uses the same numbers, so
 import re
 
 DEFAULT = {"preset": "classic", "color": "#F5F5F5", "active": "#E9BE5C", "outline": 3, "outline_color": "#000000",
-           "scale": 1.0, "position": "bottom", "karaoke": False}
+           "scale": 1.0, "position": "bottom", "karaoke": False, "glow": False, "reveal": False}
 
 PRESETS = {
     "classic": {"color": "#F5F5F5", "active": "#F5F5F5", "outline": 3, "scale": 1.0, "karaoke": False, "position": "bottom"},
@@ -33,6 +33,7 @@ def clean(style):
     s["scale"] = round(max(0.6, min(1.8, float(s["scale"]))), 2)
     s["position"] = s["position"] if s["position"] in POSITIONS else "bottom"
     s["karaoke"] = bool(s["karaoke"])
+    s["glow"], s["reveal"] = bool(s["glow"]), bool(s["reveal"])
     s["preset"] = str(s["preset"])[:20]
     return s
 

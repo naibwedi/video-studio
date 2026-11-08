@@ -52,7 +52,7 @@ describe("document", () => {
 
   it("saves plain numbers back for the project file", () => {
     const body = toSave(mk());
-    expect(body.shots[1]).toEqual({ at: 10, clip: "2", start: 1, pan: 0.4, transition: "fade" });
+    expect(body.shots[1]).toEqual({ at: 10, clip: "2", start: 1, pan: 0.4, transition: "fade", look: "", move: "" });
     expect(body.overlays.popups[0]).toEqual({ at: 12, dur: 5, click: 2.6, tagline: "Subscribe for more mezmur" });
     expect(body.channel).toEqual({ name: "Chan", handle: "@chan" });
   });

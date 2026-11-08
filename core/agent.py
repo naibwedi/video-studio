@@ -5,7 +5,7 @@ Every tool takes the project name from the session, so Claude never needs file p
 """
 import base64, contextlib, io, json, os, subprocess, urllib.request
 from PIL import Image, ImageDraw
-from . import beats, clipsearch, draft, edits, overlays, paths, project, qc, smartcrop, textstyle, youtube
+from . import beats, clipsearch, draft, edits, fx, overlays, paths, project, qc, smartcrop, textstyle, youtube
 
 TOOLS = {}
 EDIT_TOOLS = set()      # tools that change the project (the editor reloads after these)
@@ -231,10 +231,17 @@ _reg("reorder_shot", "Move a shot to another place in the order (1-based). Every
 _reg("set_transition", "Choose how the cut INTO a shot looks (shot 2 or higher). kinds: " + ", ".join(project.TRANSITIONS) + ". 'fade' is the soft default.",
      {"shot": INT, "kind": {"type": "string", "enum": list(project.TRANSITIONS)}}, ["shot", "kind"], edits.set_transition)
 _reg("set_all_transitions", "Use one transition kind for every cut in the video.", {"kind": {"type": "string", "enum": list(project.TRANSITIONS)}}, ["kind"], edits.set_all_transitions)
+_reg("set_look", "Give one shot a colour look. looks: " + ", ".join(fx.LOOKS) + " (warm = golden, night = cool blue, film = faded, mono = black and white, dramatic = deep contrast, dawn = soft pink-gold), or 'none'. Match the look to the mood of the lyric line.",
+     {"shot": INT, "look": STR}, ["shot", "look"], edits.set_look)
+_reg("set_move", "Set the camera move of one 16:9 shot over its length: " + ", ".join(fx.MOVES) + ", or 'default'. Vary the moves from shot to shot (in on emotional lines, out on wide scenes).",
+     {"shot": INT, "move": STR}, ["shot", "move"], edits.set_move)
+_reg("set_fx", "Project-wide effects. glow 0-1 = soft bloom on bright parts, dust true|false = drifting golden light specks over the whole video, pulse 0-0.12 = faint brightness pulse on each bar start, "
+     "flash = list of times in seconds for a warm light flash (use on big moments: the start of a verse, a key word, the last line).",
+     {"glow": NUM, "dust": {"type": "boolean"}, "pulse": NUM, "flash": {"type": "array", "items": NUM}}, [], edits.set_fx)
 _reg("set_text_style", "Change how the lyrics look. preset: " + ", ".join(textstyle.PRESETS) + " (karaoke styles fill each word with colour as it is sung). Other fields override the preset: "
      "color and active are #RRGGBB, outline 0-10, scale 0.6-1.8, position bottom|middle|top, karaoke true|false.",
      {"preset": {"type": "string", "enum": list(textstyle.PRESETS)}, "color": STR, "active": STR, "outline": NUM, "scale": NUM,
-      "position": {"type": "string", "enum": list(textstyle.POSITIONS)}, "karaoke": {"type": "boolean"}}, [], edits.set_text_style)
+      "position": {"type": "string", "enum": list(textstyle.POSITIONS)}, "karaoke": {"type": "boolean"}, "glow": {"type": "boolean"}, "reveal": {"type": "boolean"}}, [], edits.set_text_style)
 
 
 @tool("beat_grid", "The song's tempo and beats: bpm, bar starts, and how loud each bar is. Use it to cut on the beat or to find calm and big parts of the song.")

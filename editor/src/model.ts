@@ -10,8 +10,12 @@ export const TRANSITIONS: { id: string; label: string }[] = [
   { id: "wipeleft", label: "Wipe left" }, { id: "wiperight", label: "Wipe right" }, { id: "slideleft", label: "Slide left" },
   { id: "slideright", label: "Slide right" }, { id: "circleopen", label: "Circle open" }, { id: "zoomin", label: "Zoom in" }, { id: "smoothleft", label: "Smooth wipe" },
 ];
-export interface Shot { id: string; at: number; clip: string; start: number; pan: number; transition: string }
-export interface SubStyle { preset: string; color: string; active: string; outline: number; outline_color: string; scale: number; position: "bottom" | "middle" | "top"; karaoke: boolean }
+export interface Shot { id: string; at: number; clip: string; start: number; pan: number; transition: string; look?: string; move?: string }
+export interface Fx { glow: number; dust: boolean; pulse: number; flash: number[] }
+export const DEFAULT_FX: Fx = { glow: 0, dust: false, pulse: 0, flash: [] };
+export const LOOKS: [string, string][] = [["", "Normal colours"], ["warm", "Warm gold"], ["night", "Night blue"], ["film", "Faded film"], ["mono", "Black and white"], ["dramatic", "Deep contrast"], ["dawn", "Soft dawn"]];
+export const MOVES: [string, string][] = [["", "Default drift"], ["in", "Slow push in"], ["out", "Slow pull out"], ["left", "Drift left"], ["right", "Drift right"], ["up", "Rise"], ["still", "Hold still"]];
+export interface SubStyle { preset: string; color: string; active: string; outline: number; outline_color: string; scale: number; position: "bottom" | "middle" | "top"; karaoke: boolean; glow?: boolean; reveal?: boolean }
 export const DEFAULT_SUBS: SubStyle = { preset: "classic", color: "#F5F5F5", active: "#E9BE5C", outline: 3, outline_color: "#000000", scale: 1, position: "bottom", karaoke: false };
 export const SUB_PRESETS: Record<string, Partial<SubStyle> & { label: string }> = {
   classic: { label: "Classic", color: "#F5F5F5", active: "#F5F5F5", outline: 3, scale: 1, karaoke: false, position: "bottom" },
@@ -31,7 +35,7 @@ export interface Style {
   end_card: Card | null;
   popups: Popup[];
 }
-export interface Doc { title: string; theme: string; duration: number; shots: Shot[]; lines: Line[]; style: Style; subs: SubStyle }
+export interface Doc { title: string; theme: string; duration: number; shots: Shot[]; lines: Line[]; style: Style; subs: SubStyle; fx?: Fx }
 
 export type SelKind = "shot" | "line" | "popup" | "title" | "end" | "logo";
 export type Sel = { kind: SelKind; id?: string } | null;
@@ -41,7 +45,7 @@ export const MIN_SHOT = 0.5;
 export function fromPayload(d: any): Doc {
   const raw = d.raw || {};
   const ov = d.overlays || {};
-  const shots: Shot[] = (d.shots as any[]).map(s => ({ id: uid(), at: +s.at, clip: String(s.clip), start: +(s.start ?? 0), pan: +(s.pan ?? 0.5), transition: s.transition || "fade" }));
+  const shots: Shot[] = (d.shots as any[]).map(s => ({ id: uid(), at: +s.at, clip: String(s.clip), start: +(s.start ?? 0), pan: +(s.pan ?? 0.5), transition: s.transition || "fade", look: s.look || "", move: s.move || "" }));
   shots.sort((a, b) => a.at - b.at);
   if (shots.length) shots[0].at = 0;
   const lines: Line[] = ((raw.subtitles || {}).lines || []).map((l: any) => ({ id: uid(), text: l.text, start: +l.start, end: +l.end, keywords: l.keywords }));
@@ -51,6 +55,7 @@ export function fromPayload(d: any): Doc {
   return {
     title: raw.title || d.name, theme: (raw.theme || []).join(" "), duration: +d.duration, shots, lines,
     subs: { ...DEFAULT_SUBS, ...((raw.subtitles || {}).style || {}) },
+    fx: { ...DEFAULT_FX, ...(raw.fx || {}) },
     style: {
       channel: { name: d.channel?.name ?? "", handle: d.channel?.handle ?? "" },
       logo: { in: ov.logo?.in ?? null, out: ov.logo?.out ?? null },
@@ -64,8 +69,9 @@ export function fromPayload(d: any): Doc {
 export function toSave(doc: Doc) {
   return {
     title: doc.title, theme: doc.theme,
-    shots: doc.shots.map(s => ({ at: round2(s.at), clip: s.clip, start: round2(s.start), pan: round2(s.pan), transition: s.transition })),
+    shots: doc.shots.map(s => ({ at: round2(s.at), clip: s.clip, start: round2(s.start), pan: round2(s.pan), transition: s.transition, look: s.look || "", move: s.move || "" })),
     subs: doc.subs,
+    fx: doc.fx ?? DEFAULT_FX,
     lines: doc.lines.map(l => ({ text: l.text, start: round2(l.start), end: round2(l.end), keywords: l.keywords })),
     channel: doc.style.channel,
     overlays: { logo: doc.style.logo, title_card: doc.style.title_card, end_card: doc.style.end_card,
@@ -85,7 +91,7 @@ export const shotIndexAt = (doc: Doc, t: number) => {
 export function splitAt(doc: Doc, t: number): Doc {
   const i = shotIndexAt(doc, t), s = doc.shots[i];
   if (!s || t - s.at < MIN_SHOT || shotEnd(doc, i) - t < MIN_SHOT) return doc;
-  const next: Shot = { id: uid(), at: round2(t), clip: s.clip, start: round2(s.start + (t - s.at)), pan: s.pan, transition: "fade" };
+  const next: Shot = { id: uid(), at: round2(t), clip: s.clip, start: round2(s.start + (t - s.at)), pan: s.pan, transition: "fade", look: s.look, move: s.move };
   return { ...doc, shots: [...doc.shots.slice(0, i + 1), next, ...doc.shots.slice(i + 1)] };
 }
 export function deleteShot(doc: Doc, id: string): Doc {
