@@ -129,6 +129,7 @@ export const useStore = create<State>((set, get) => ({
   setSnapLine(snapLine) { set({ snapLine }); },
 
   toast(msg, kind = "") {
+    if (get().toasts.some(t => t.msg === msg)) return;      // a failing autosave must not stack the same message again and again
     const id = toastId++;
     set({ toasts: [...get().toasts, { id, msg, kind }] });
     setTimeout(() => set({ toasts: get().toasts.filter(t => t.id !== id) }), kind === "bad" ? 7000 : 3200);
