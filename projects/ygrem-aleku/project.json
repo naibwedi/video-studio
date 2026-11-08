@@ -1,6 +1,6 @@
 {
  "title": "ይግረም ኣለኹ",
- "audio": "audio/ygrem-aleku-0m18-1m25.wav",
+ "audio": "audio/ygrem-aleku-1m25.wav",
  "sizes": [
   "16x9",
   "9x16"
@@ -10,43 +10,43 @@
   "lines": [
    {
     "text": "ይግረም ኣለኹ ብኣኻ",
-    "start": 3.98,
-    "end": 9.18
+    "start": 21.98,
+    "end": 27.18
    },
    {
     "text": "ንጉሰይ ፍሉይ 'ዩ ስራሕካ",
-    "start": 9.58,
-    "end": 14.68
+    "start": 27.58,
+    "end": 32.68
    },
    {
     "text": "ሂወት ከሞ ዘይብለይ ርኢኻ",
-    "start": 14.92,
-    "end": 20.56
+    "start": 32.92,
+    "end": 38.56
    },
    {
     "text": "ሂወትካ ሂብካዮ ንባርያኻ",
-    "start": 20.7,
-    "end": 26.16
+    "start": 38.7,
+    "end": 44.16
    },
    {
     "text": "ይድነቕ ኣለኹ ብኣኻ",
-    "start": 26.3,
-    "end": 30.96
+    "start": 44.3,
+    "end": 48.96
    },
    {
     "text": "ክርስቶስ ግሩም'ዩ ግብርኻ",
-    "start": 31.94,
-    "end": 37.04
+    "start": 49.94,
+    "end": 55.04
    },
    {
     "text": "ወገን ከም ዘይብለይ ርኢኻ",
-    "start": 37.52,
-    "end": 40.9
+    "start": 55.52,
+    "end": 58.9
    },
    {
     "text": "ካብ ዙፋን ወሪድካ ንባርያኻ",
-    "start": 43.04,
-    "end": 48.3
+    "start": 61.04,
+    "end": 66.3
    }
   ],
   "style": {
@@ -57,7 +57,9 @@
    "outline_color": "#000000",
    "scale": 1.0,
    "position": "bottom",
-   "karaoke": true
+   "karaoke": true,
+   "glow": true,
+   "reveal": true
   }
  },
  "overlays": {
@@ -68,16 +70,172 @@
   },
   "title_card": {
    "text": "ይግረም ኣለኹ",
-   "subtitle": "",
-   "in": 1.0,
-   "out": 6.0
+   "subtitle": "ሰብአ ሰገል",
+   "in": 1.5,
+   "out": 8.0
   },
-  "popups": [],
-  "end_card": null
+  "popups": [
+   {
+    "at": 45.0,
+    "dur": 5.0,
+    "click": 2.6,
+    "tagline": "Subscribe for more mezmur"
+   }
+  ],
+  "end_card": {
+   "title": "ይግረም ኣለኹ",
+   "handle": "@ሰብአሰገልThemagis",
+   "tagline": "SUBSCRIBE FOR MORE MEZMUR",
+   "in": 72.0
+  }
  },
- "shots": [],
+ "shots": [
+  {
+   "at": 0.0,
+   "clip": "3926075",
+   "start": 2.0,
+   "pan": 0.5,
+   "look": "dawn",
+   "move": "in"
+  },
+  {
+   "at": 5.7,
+   "clip": "9000001",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "left"
+  },
+  {
+   "at": 11.98,
+   "clip": "9000011",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "move": "up"
+  },
+  {
+   "at": 16.87,
+   "clip": "9000003",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 22.01,
+   "clip": "4787839",
+   "start": 2.0,
+   "pan": 0.5,
+   "transition": "fadeblack",
+   "look": "dramatic",
+   "move": "in"
+  },
+  {
+   "at": 27.55,
+   "clip": "9000017",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 33.16,
+   "clip": "20750079",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "film",
+   "move": "out"
+  },
+  {
+   "at": 38.73,
+   "clip": "9000010",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "right"
+  },
+  {
+   "at": 44.3,
+   "clip": "20103690",
+   "start": 3.0,
+   "pan": 0.5,
+   "transition": "smoothleft",
+   "look": "dawn",
+   "move": "in"
+  },
+  {
+   "at": 49.88,
+   "clip": "9000005",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 55.5,
+   "clip": "4513831",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "night",
+   "move": "in"
+  },
+  {
+   "at": 61.02,
+   "clip": "9362165",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "fadeblack",
+   "look": "dramatic",
+   "move": "up"
+  },
+  {
+   "at": 66.66,
+   "clip": "9000002",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dawn",
+   "move": "left"
+  },
+  {
+   "at": 72.92,
+   "clip": "9000014",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 79.22,
+   "clip": "9000018",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dawn",
+   "move": "out"
+  }
+ ],
  "channel": {
   "name": "ሰብአ ሰገል",
   "handle": "@ሰብአሰገልThemagis"
+ },
+ "fx": {
+  "glow": 0.5,
+  "dust": true,
+  "pulse": 0.04,
+  "flash": [
+   22.0,
+   44.3,
+   60.9
+  ]
  }
 }
