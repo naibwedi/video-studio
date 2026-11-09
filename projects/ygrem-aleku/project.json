@@ -94,134 +94,105 @@
    "at": 0.0,
    "clip": "3926075",
    "start": 2.0,
-   "pan": 0.5,
-   "look": "dawn",
-   "move": "in"
+   "pan": 0.5
   },
   {
-   "at": 5.7,
-   "clip": "9000001",
+   "at": 6.18,
+   "clip": "8720610",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "warm",
-   "move": "left"
+   "transition": "dissolve"
   },
   {
-   "at": 11.98,
+   "at": 11.32,
    "clip": "9000011",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "move": "up"
+   "transition": "dissolve"
   },
   {
    "at": 16.87,
    "clip": "9000003",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "warm",
-   "move": "in"
+   "transition": "dissolve"
   },
   {
-   "at": 22.01,
+   "at": 21.2,
    "clip": "4787839",
    "start": 2.0,
    "pan": 0.5,
-   "transition": "fadeblack",
-   "look": "dramatic",
-   "move": "in"
+   "transition": "fadeblack"
   },
   {
    "at": 27.55,
-   "clip": "9000017",
+   "clip": "8720681",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "warm",
-   "move": "in"
+   "transition": "dissolve"
   },
   {
    "at": 33.16,
    "clip": "20750079",
    "start": 1.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "film",
-   "move": "out"
+   "transition": "dissolve"
   },
   {
    "at": 38.73,
    "clip": "9000010",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "warm",
-   "move": "right"
+   "transition": "dissolve"
   },
   {
    "at": 44.3,
    "clip": "20103690",
    "start": 3.0,
    "pan": 0.5,
-   "transition": "smoothleft",
-   "look": "dawn",
-   "move": "in"
+   "transition": "smoothleft"
   },
   {
    "at": 49.88,
    "clip": "9000005",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "warm",
-   "move": "in"
+   "transition": "dissolve"
   },
   {
    "at": 55.5,
    "clip": "4513831",
    "start": 1.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "night",
-   "move": "in"
+   "transition": "dissolve"
   },
   {
    "at": 61.02,
    "clip": "9362165",
    "start": 1.0,
    "pan": 0.5,
-   "transition": "fadeblack",
-   "look": "dramatic",
-   "move": "up"
+   "transition": "fadeblack"
   },
   {
    "at": 66.66,
    "clip": "9000002",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "dawn",
-   "move": "left"
+   "transition": "dissolve"
   },
   {
    "at": 72.92,
    "clip": "9000014",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "warm",
-   "move": "in"
+   "transition": "dissolve"
   },
   {
    "at": 79.22,
    "clip": "9000018",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve",
-   "look": "dawn",
-   "move": "out"
+   "transition": "dissolve"
   }
  ],
  "channel": {
