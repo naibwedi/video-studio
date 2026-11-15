@@ -71,7 +71,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(names, ["demo"])
         d = json.loads(self.call("/api/project/demo")[2])
         self.assertEqual(d["duration"], 30)
-        self.assertEqual(d["channel"]["handle"], "@ሰብአሰገልThemagis")
+        self.assertEqual(d["channel"]["handle"], "@sebtibeb-tube")
         self.assertEqual([e["path"] for e in d["exports"]], ["out.mp4"])
 
     def test_save_validates_and_keeps_backup(self):
