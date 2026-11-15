@@ -9,8 +9,8 @@
   "lines": [
    {
     "text": "ንስኻ ዘይትናብያ ነፍሲ",
-    "start": 16.36,
-    "end": 21.16
+    "start": 16.44,
+    "end": 21.24
    },
    {
     "text": "ንስኻ ዘይለኻላ ነፍሲ",
@@ -24,18 +24,18 @@
    },
    {
     "text": "ንስኻ ዘይመሓርካያ ነፍሲ",
-    "start": 31.84,
-    "end": 35.74
+    "start": 31.91,
+    "end": 35.81
    },
    {
-    "text": "መዓስ ትሓልፎ ናይ ማዕብላት ነውጺ",
-    "start": 37.02,
-    "end": 41.22
+    "text": "መዓስ ትሓልፎ ",
+    "start": 35.81,
+    "end": 38.39
    },
    {
     "text": "መዓስ ትሰግሮ ትዘርዕድ ለይቲ",
-    "start": 42.1,
-    "end": 46.3
+    "start": 42.52,
+    "end": 47.75
    },
    {
     "text": "ንስኻ ዘይትናብያ ነፍሲ",
@@ -58,28 +58,38 @@
     "end": 92.32
    },
    {
-    "text": "መዓስ ትሓልፎ ናይ ማዕብላት ነውጺ",
-    "start": 93.6,
-    "end": 97.76
+    "text": "መዓስ ትሓልፎ",
+    "start": 93.02,
+    "end": 96.04
    },
    {
     "text": "መዓስ ትሰግሮ ትዘርዕድ ለይቲ",
-    "start": 98.74,
-    "end": 103.04
+    "start": 98.98,
+    "end": 103.21
+   },
+   {
+    "text": "ናይ ማዕበላት ነውጺ",
+    "start": 38.71,
+    "end": 42.52
+   },
+   {
+    "text": "ናይ ማዕበላት ነውጺ",
+    "start": 96.04,
+    "end": 98.98
    }
   ],
   "style": {
-   "preset": "gold",
-   "color": "#F5EBD0",
+   "preset": "custom",
+   "color": "#FFFFFF",
    "active": "#E9BE5C",
    "outline": 3.0,
    "outline_color": "#000000",
-   "scale": 1.0,
+   "scale": 1.75,
    "position": "bottom",
    "karaoke": true,
    "glow": true,
    "reveal": true,
-   "font": "ebrima"
+   "font": "bela-bereka"
   }
  },
  "overlays": {
@@ -146,48 +156,48 @@
   },
   {
    "at": 27.3,
-   "clip": "9000021",
-   "start": 0.0,
-   "pan": 0.5,
+   "clip": "9000010",
+   "start": 1.0,
+   "pan": 0.7,
    "transition": "dissolve"
   },
   {
    "at": 33.04,
-   "clip": "8720681",
-   "start": 0.0,
+   "clip": "7312220",
+   "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
   },
   {
    "at": 38.39,
-   "clip": "9465399",
+   "clip": "3987642",
    "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
   },
   {
    "at": 44.15,
-   "clip": "8776903",
+   "clip": "4297704",
+   "start": 1.0,
+   "pan": 0.15,
+   "transition": "dissolve"
+  },
+  {
+   "at": 47.75,
+   "clip": "3878209",
    "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
   },
   {
-   "at": 49.62,
-   "clip": "9000023",
-   "start": 0.0,
-   "pan": 0.5,
-   "transition": "dissolve"
-  },
-  {
-   "at": 54.75,
+   "at": 51.58,
    "clip": "6327827",
    "start": 1.0,
    "pan": 0.5,
    "transition": "smoothleft"
   },
   {
-   "at": 60.48,
+   "at": 59.62,
    "clip": "8318959",
    "start": 1.0,
    "pan": 0.5,
@@ -202,7 +212,7 @@
   },
   {
    "at": 73.05,
-   "clip": "8675021",
+   "clip": "20103690",
    "start": 1.0,
    "pan": 0.5,
    "transition": "fadeblack"
@@ -222,21 +232,14 @@
    "transition": "dissolve"
   },
   {
-   "at": 88.44,
-   "clip": "9000026",
-   "start": 0.0,
-   "pan": 0.5,
-   "transition": "dissolve"
-  },
-  {
-   "at": 93.61,
+   "at": 88.42,
    "clip": "6655122",
    "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
   },
   {
-   "at": 98.75,
+   "at": 97.26,
    "clip": "9000033",
    "start": 0.0,
    "pan": 0.5,
@@ -244,42 +247,21 @@
   },
   {
    "at": 104.47,
-   "clip": "6860453",
+   "clip": "10490303",
    "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
   },
   {
-   "at": 110.19,
+   "at": 114.7,
    "clip": "8677058",
    "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
   },
   {
-   "at": 115.31,
-   "clip": "9000034",
-   "start": 0.0,
-   "pan": 0.5,
-   "transition": "dissolve"
-  },
-  {
-   "at": 121.07,
-   "clip": "9000031",
-   "start": 0.0,
-   "pan": 0.5,
-   "transition": "dissolve"
-  },
-  {
-   "at": 126.42,
-   "clip": "11408512",
-   "start": 1.0,
-   "pan": 0.5,
-   "transition": "dissolve"
-  },
-  {
-   "at": 131.02,
-   "clip": "4625481",
+   "at": 121.77,
+   "clip": "6498490",
    "start": 1.0,
    "pan": 0.5,
    "transition": "dissolve"
