@@ -4,7 +4,7 @@ from . import paths
 
 DEFAULTS = {
     "title": "",
-    "channel": {"name": "ሰብአ ሰገል", "handle": "@ሰብአሰገልThemagis"},
+    "channel": {"name": "seb tibeb ሰብ ጥበብ", "handle": "@sebtibeb-tube"},
     "theme": [],
     "fps": 24,
     "crossfade": 0.6,

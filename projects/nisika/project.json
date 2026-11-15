@@ -90,13 +90,13 @@
   },
   "title_card": {
    "text": "ንስኻ",
-   "subtitle": "ሰብአ ሰገል",
+   "subtitle": "seb tibeb ሰብ ጥበብ",
    "in": 0.8,
    "out": 6.5
   },
   "end_card": {
    "title": "ንስኻ",
-   "handle": "@ሰብአሰገልThemagis",
+   "handle": "@sebtibeb-tube",
    "tagline": "SUBSCRIBE FOR MORE MEZMUR",
    "in": 124.0
   },
@@ -296,8 +296,8 @@
   ]
  },
  "channel": {
-  "name": "ሰብአ ሰገል",
-  "handle": "@ሰብአሰገልThemagis"
+  "name": "seb tibeb ሰብ ጥበብ",
+  "handle": "@sebtibeb-tube"
  },
  "theme": []
 }

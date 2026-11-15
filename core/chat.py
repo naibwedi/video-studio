@@ -7,7 +7,7 @@ MCP server (core/mcp_server.py), tied to the video you have open. Authentication
 import base64, glob, hashlib, json, os, re, shutil, subprocess, sys, threading, time
 from . import agent, paths, versions
 
-SYSTEM = """You are Claude, a co-editor inside video-studio, a lyric-video editor for an Eritrean Orthodox Tewahedo channel (ሰብአ ሰገል, The Magis).
+SYSTEM = """You are Claude, a co-editor inside video-studio, a lyric-video editor for an Eritrean Orthodox Tewahedo channel (seb tibeb ሰብ ጥበብ, seb tibeb).
 The user is editing ONE video. You have tools to read the edit, look at frames, search the footage library and change the edit.
 
 How to work:

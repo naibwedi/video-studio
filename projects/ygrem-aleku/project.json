@@ -71,7 +71,7 @@
   },
   "title_card": {
    "text": "ይግረም ኣለኹ",
-   "subtitle": "ሰብአ ሰገል",
+   "subtitle": "seb tibeb ሰብ ጥበብ",
    "in": 1.5,
    "out": 8.0
   },
@@ -85,7 +85,7 @@
   ],
   "end_card": {
    "title": "ይግረም ኣለኹ",
-   "handle": "@ሰብአሰገልThemagis",
+   "handle": "@sebtibeb-tube",
    "tagline": "SUBSCRIBE FOR MORE MEZMUR",
    "in": 72.0
   }
@@ -226,8 +226,8 @@
   }
  ],
  "channel": {
-  "name": "ሰብአ ሰገል",
-  "handle": "@ሰብአሰገልThemagis"
+  "name": "seb tibeb ሰብ ጥበብ",
+  "handle": "@sebtibeb-tube"
  },
  "fx": {
   "glow": 0.5,

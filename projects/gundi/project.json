@@ -70,12 +70,12 @@
    }
   ],
   "style": {
-   "preset": "gold",
-   "color": "#F5EBD0",
-   "active": "#E9BE5C",
-   "outline": 3.0,
+   "preset": "karaoke",
+   "color": "#FFFFFF",
+   "active": "#FFD54A",
+   "outline": 4.0,
    "outline_color": "#000000",
-   "scale": 1.0,
+   "scale": 1.1,
    "position": "bottom",
    "karaoke": true
   }
@@ -89,15 +89,15 @@
   },
   "title_card": {
    "text": "ጉንዲ ዓይነይ'ዩ",
-   "subtitle": "ሰብአ ሰገል  ·  THE MAGIS",
+   "subtitle": "seb tibeb ሰብ ጥበብ  ·  THE MAGIS",
    "in": 2.0,
    "out": 12.0
   },
   "end_card": {
    "title": "ጉንዲ ዓይነይ'ዩ",
-   "handle": "@ሰብአሰገልThemagis",
+   "handle": "@sebtibeb-tube",
    "tagline": "SUBSCRIBE FOR MORE MEZMUR",
-   "in": 106.5
+   "in": 106.55
   },
   "popups": [
    {
@@ -140,9 +140,21 @@
    "pan": 0.5
   },
   {
+   "at": 15.38,
+   "clip": "11514996",
+   "start": 22.58,
+   "pan": 0.5
+  },
+  {
    "at": 17.0,
    "clip": "6988904",
    "start": 3.0,
+   "pan": 0.5
+  },
+  {
+   "at": 18.61,
+   "clip": "6988904",
+   "start": 4.61,
    "pan": 0.5
   },
   {
@@ -306,11 +318,17 @@
    "clip": "6327827",
    "start": 3.0,
    "pan": 0.5
+  },
+  {
+   "at": 121.99,
+   "clip": "6327827",
+   "start": 7.49,
+   "pan": 0.5
   }
  ],
  "channel": {
-  "name": "ሰብአ ሰገል",
-  "handle": "@ሰብአሰገልThemagis"
+  "name": "seb tibeb ሰብ ጥበብ",
+  "handle": "@sebtibeb-tube"
  },
  "theme": []
 }
