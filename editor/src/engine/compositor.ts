@@ -235,8 +235,9 @@ export class Compositor {
       const a = fadeIn(t, tc.in, 1.2) * fadeOut(t, (tc.out as number) - 1.5, 1.5);
       if (a > 0) {
         ctx.save(); ctx.globalAlpha = a;
-        ctx.fillStyle = "rgba(0,0,0,0.47)"; ctx.fillRect(0, H * 0.36, W, H * 0.28);
-        const ty = H * (v ? 0.43 : 0.42);
+        const ls = (v ? 300 : 250) * k, top = H * (v ? 0.14 : 0.12), ty = top + ls + 35 * k;
+        ctx.fillStyle = "rgba(0,0,0,0.47)"; ctx.fillRect(0, top - 30 * k, W, ty + 250 * k - (top - 30 * k));
+        this.roundLogo((W - ls) / 2, top, ls, 1);
         this.text(tc.text ?? "", W / 2, ty + (v ? 130 : 150) * k, (v ? 130 : 150) * k, GOLD);
         if (tc.subtitle) this.text(tc.subtitle, W / 2, ty + (v ? 130 : 150) * k + (v ? 70 : 78) * k, (v ? 42 : 46) * k, CREAM);
         ctx.restore();

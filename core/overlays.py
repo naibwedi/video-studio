@@ -76,13 +76,16 @@ def make_logo(p, W, H, vertical, path):
 
 
 def make_title(p, W, H, vertical, path):
+    """Title card: the round channel logo, the song title and the channel name on a soft dark band."""
     cfg = p["overlays"]["title_card"]
-    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ls = 300 if vertical else 250
+    top = int(H * (0.14 if vertical else 0.12))
+    ty = top + ls + 35
     band = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(band).rectangle((0, H * 0.36, W, H * 0.64), fill=(0, 0, 0, 120))
-    img = Image.alpha_composite(img, band)
+    ImageDraw.Draw(band).rectangle((0, top - 30, W, ty + 250), fill=(0, 0, 0, 120))
+    img = band
+    img.alpha_composite(round_logo(paths_file(p, cfg.get("logo", p["overlays"]["logo"]["image"])), ls), ((W - ls) // 2, top))
     d = ImageDraw.Draw(img)
-    ty = H * (0.43 if vertical else 0.42)
     centered(d, W, ty, cfg["text"], font(130 if vertical else 150), GOLD)
     if cfg.get("subtitle"):
         centered(d, W, ty + (170 if vertical else 190), cfg["subtitle"], font(42 if vertical else 46), CREAM)
