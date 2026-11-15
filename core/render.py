@@ -75,7 +75,7 @@ def segment(p, shot, L, W, H, vertical):
         pre = f"[0:v]fps={fps},"
     else:
         inp = ["-ss", f"{shot['start']}", "-t", f"{L + 1:.3f}", "-i", paths.rel(src)]
-        pre = f"[0:v]fps={fps},trim=duration={L:.3f},setpts=PTS-STARTPTS,"
+        pre = f"[0:v]fps={fps},tpad=stop_mode=clone:stop_duration={L:.3f},trim=duration={L:.3f},setpts=PTS-STARTPTS,"   # a clip shorter than its shot holds its last frame
     pan, motion = shot["pan"], shot["motion"]
     if vertical:
         d = 0.0 if motion == "static" else 0.06
