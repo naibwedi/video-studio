@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, ClipboardPaste, Crop, Plus, SlidersHorizontal, Trash2, Wand2 } from "lucide-react";
 import { thumbUrl, isLibraryClip } from "../api";
-import { DEFAULT_FX, LOOKS, MOVES, SUB_PRESETS, SubStyle, TRANSITIONS, Line, deleteShot, fmtShort, moveShot, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, uid } from "../model";
+import { DEFAULT_FX, FONTS, LOOKS, MOVES, SUB_PRESETS, SubStyle, TRANSITIONS, Line, deleteShot, fmtShort, moveShot, patchLine, patchPopup, patchShot, patchStyle, round2, shotEnd, uid } from "../model";
 import { api } from "../api";
 import { useStore } from "../store";
 import { Modal, NumField, TextField } from "./Fields";
@@ -48,6 +48,9 @@ function LyricLook() {
         <label className="row dim" style={{ gap: 6 }} title="A soft halo of light behind the words"><input type="checkbox" checked={!!st.glow} onChange={e => set({ glow: e.target.checked })} /> Glow</label>
         <label className="row dim" style={{ gap: 6 }} title="Each line grows in softly as it appears"><input type="checkbox" checked={!!st.reveal} onChange={e => set({ reveal: e.target.checked })} /> Grow in</label>
       </div>
+      <label className="field"><span>Font</span>
+        <select value={st.font ?? "ebrima"} onChange={e => set({ font: e.target.value })} style={{ fontFamily: `"${FONTS.find(f => f.id === (st.font ?? "ebrima"))?.family}", Ebrima, sans-serif` }}>
+          {FONTS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></label>
       <div className="grid2">
         <label className="field"><span>Text colour</span><input type="color" value={st.color} onChange={e => set({ color: e.target.value.toUpperCase() })} /></label>
         <label className="field"><span>Sung colour</span><input type="color" value={st.active} disabled={!st.karaoke} onChange={e => set({ active: e.target.value.toUpperCase() })} /></label>

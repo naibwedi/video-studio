@@ -336,3 +336,6 @@ picks and shows you footage to choose from, and builds it.
 ## 9. Not included yet (could be added)
 
 - Automatic subtitle timing is a rough draft only; tap-sync is the accurate way.
+
+## Lyric fonts (v0.10)
+Pick the font of the lyrics in the editor (Lyrics look > Font). Choices: Ebrima (default), Habesha Serif (Zibriqriq, Distort, Distort Italic), Agbalumo and Bela Bereka. The font files are in `library/fonts` (see the README there for licences); to add another, copy the .ttf there and add one line to `core/fonts.py` and to `FONTS` in `editor/src/model.ts` (use the font's full name, not just its family). `set_text_style` through Claude does not know about fonts yet.

@@ -3,9 +3,10 @@
 The editor's preview (editor/src/engine/compositor.ts) uses the same numbers, so what you see is what is rendered.
 """
 import re
+from . import fonts
 
 DEFAULT = {"preset": "classic", "color": "#F5F5F5", "active": "#E9BE5C", "outline": 3, "outline_color": "#000000",
-           "scale": 1.0, "position": "bottom", "karaoke": False, "glow": False, "reveal": False}
+           "scale": 1.0, "position": "bottom", "karaoke": False, "glow": False, "reveal": False, "font": "ebrima"}
 
 PRESETS = {
     "classic": {"color": "#F5F5F5", "active": "#F5F5F5", "outline": 3, "scale": 1.0, "karaoke": False, "position": "bottom"},
@@ -34,6 +35,7 @@ def clean(style):
     s["position"] = s["position"] if s["position"] in POSITIONS else "bottom"
     s["karaoke"] = bool(s["karaoke"])
     s["glow"], s["reveal"] = bool(s["glow"]), bool(s["reveal"])
+    s["font"] = fonts.clean(s["font"])
     s["preset"] = str(s["preset"])[:20]
     return s
 

@@ -15,7 +15,16 @@ export interface Fx { glow: number; dust: boolean; pulse: number; flash: number[
 export const DEFAULT_FX: Fx = { glow: 0, dust: false, pulse: 0, flash: [] };
 export const LOOKS: [string, string][] = [["", "Normal colours"], ["warm", "Warm gold"], ["night", "Night blue"], ["film", "Faded film"], ["mono", "Black and white"], ["dramatic", "Deep contrast"], ["dawn", "Soft dawn"]];
 export const MOVES: [string, string][] = [["", "Default drift"], ["in", "Slow push in"], ["out", "Slow pull out"], ["left", "Drift left"], ["right", "Drift right"], ["up", "Rise"], ["still", "Hold still"]];
-export interface SubStyle { preset: string; color: string; active: string; outline: number; outline_color: string; scale: number; position: "bottom" | "middle" | "top"; karaoke: boolean; glow?: boolean; reveal?: boolean }
+export interface SubStyle { preset: string; color: string; active: string; outline: number; outline_color: string; scale: number; position: "bottom" | "middle" | "top"; karaoke: boolean; glow?: boolean; reveal?: boolean; font?: string }
+/** Lyric fonts: id, label, family name, file in library/fonts (empty = the system Ebrima). Same list as core/fonts.py. */
+export const FONTS: { id: string; label: string; family: string; file: string }[] = [
+  { id: "ebrima", label: "Ebrima (default)", family: "Ebrima", file: "" },
+  { id: "habesha-zibriqriq", label: "Habesha Serif - Zibriqriq", family: "Habesha Zibriqriq", file: "habesha-serif-zibriqriq.ttf" },
+  { id: "habesha-distort", label: "Habesha Serif - Distort", family: "Habesha Distort", file: "habesha-serif-distort.ttf" },
+  { id: "habesha-distort-italic", label: "Habesha Serif - Distort Italic", family: "Habesha Distort Italic", file: "habesha-serif-distort-italic.ttf" },
+  { id: "agbalumo", label: "Agbalumo", family: "Agbalumo", file: "agbalumo.ttf" },
+  { id: "bela-bereka", label: "Bela Bereka", family: "Bela Bereka", file: "bela-bereka.ttf" },
+];
 export const DEFAULT_SUBS: SubStyle = { preset: "classic", color: "#F5F5F5", active: "#E9BE5C", outline: 3, outline_color: "#000000", scale: 1, position: "bottom", karaoke: false };
 export const SUB_PRESETS: Record<string, Partial<SubStyle> & { label: string }> = {
   classic: { label: "Classic", color: "#F5F5F5", active: "#F5F5F5", outline: 3, scale: 1, karaoke: false, position: "bottom" },

@@ -1,7 +1,7 @@
 """Subtitles (.srt/.ass) and the picture overlays: corner logo, title card, end card."""
 import os
 from PIL import Image, ImageDraw, ImageFont
-from . import paths, textstyle
+from . import fonts, paths, textstyle
 
 GOLD = (233, 190, 92, 255)
 CREAM = (245, 235, 208, 255)
@@ -30,8 +30,8 @@ def write_ass(p, size_name, W, H, path):
     ass = ["[Script Info]\nScriptType: v4.00+\nPlayResX: %d\nPlayResY: %d\nWrapStyle: 2\n" % (W, H),
            "[V4+ Styles]\nFormat: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,"
            "Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding",
-           f"Style: Lyric,{sub['font']},{fs},{textstyle.ass_colour(prim)},{textstyle.ass_colour(sec)},{textstyle.ass_colour(st['outline_color'])},&H80000000,"
-           f"1,0,0,0,100,100,0,0,1,{st['outline']:g},1,{align},60,60,{mv},1\n",
+           f"Style: Lyric,{fonts.family(st['font'])},{fs},{textstyle.ass_colour(prim)},{textstyle.ass_colour(sec)},{textstyle.ass_colour(st['outline_color'])},&H80000000,"
+           f"{-1 if fonts.bold(st['font']) else 0},0,0,0,100,100,0,0,1,{st['outline']:g},1,{align},60,60,{mv},1\n",
            "[Events]\nFormat: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text"]
     pop = "\\fscx90\\fscy90\\t(0,450,\\fscx100\\fscy100)" if st["reveal"] else ""
     if st["glow"]:        # a soft coloured halo under the text (the same words, blurred and tinted, on the layer below)

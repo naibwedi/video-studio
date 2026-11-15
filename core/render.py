@@ -8,7 +8,7 @@ Change one shot -> only that segment is rendered again.
 import hashlib, json, os, subprocess, time
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
-from . import fx as fxm, overlays, paths, popup as popmod
+from . import fonts, fx as fxm, overlays, paths, popup as popmod, textstyle
 from .project import SIZES
 
 STILL = (".png", ".jpg", ".jpeg", ".webp")
@@ -262,7 +262,8 @@ def build(p, size_name, variant="full", preview=False):
     if subs_on:
         ass = os.path.join(bdir, f"subs_{size_name}.ass")
         overlays.write_ass(p, size_name, W0, H0, ass)
-        tail = f"ass={paths.rel(ass)}:fontsdir='C\\:/Windows/Fonts',"
+        fdir = fonts.render_dir(textstyle.clean(p["subtitles"].get("style"))["font"]).replace("\\", "/").replace(":", "\\:")
+        tail = f"ass={paths.rel(ass)}:fontsdir='{fdir}',"
     fx.append(f"{cur}{tail}fade=t=in:st=0:d={p['fade_in']},fade=t=out:st={dur - p['fade_out']:.2f}:d={p['fade_out']}[vout]")
     if with_audio:
         fx.append(f"[{idx['audio']}:a]atrim=0:{dur:.3f},asetpts=PTS-STARTPTS,afade=t=in:st=0:d={p['audio_fade_in']},"

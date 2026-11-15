@@ -316,6 +316,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not clipsearch.available():
                     return self.send_json({"error": "Search by meaning needs the optional AI install: pip install -r requirements-ai.txt"}, 400)
                 return self.send_json([{"id": c, "score": round(sc, 3)} for c, sc in clipsearch.search(query, 40)])
+            if m := re.fullmatch(r"/fonts/([\w.\-]+\.ttf)", path):
+                return self.send_file(os.path.join(paths.ROOT, "library", "fonts", m[1]))
             if path == "/api/brand/logo":
                 return self.send_file(os.path.join(paths.ROOT, "library", "brand", "logo.jpg"))
             if path in ("/", "/classic"):

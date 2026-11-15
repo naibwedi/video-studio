@@ -1,10 +1,21 @@
 // Live preview: plays the real clips in a pool of <video> elements and composites everything on a canvas, driven by the song's <audio> clock.
 // It mirrors the ffmpeg render (drift move, grade, cross-fades, subtitles, cards, pop-ups) so what you scrub is close to what you build.
 import { clipUrl, thumbUrl } from "../api";
-import { Doc, Line, Popup, Shot, clamp, shotEnd, shotIndexAt, sweepWords } from "../model";
+import { Doc, FONTS, Line, Popup, Shot, clamp, shotEnd, shotIndexAt, sweepWords } from "../model";
 
 const X = 0.6;                                   // cross-fade seconds, same as the renderer
 const FONT = '"Ebrima", "Noto Sans Ethiopic", "Nyala", sans-serif';
+/** CSS font stack for a lyric font id; the file is fetched once from the server and added to the page. */
+const loadedFonts = new Set<string>();
+export function lyricFont(id?: string, onReady?: () => void): { stack: string; weight: number } {
+  const f = FONTS.find(x => x.id === id);
+  if (!f || !f.file) return { stack: FONT, weight: 700 };
+  if (!loadedFonts.has(f.id)) {
+    loadedFonts.add(f.id);
+    try { new FontFace(f.family, `url(/fonts/${f.file})`).load().then(ff => { document.fonts.add(ff); onReady?.(); }).catch(() => loadedFonts.delete(f.id)); } catch { loadedFonts.delete(f.id); }
+  }
+  return { stack: `"${f.family}", "Ebrima", "Noto Sans Ethiopic", sans-serif`, weight: 400 };
+}
 const GOLD = "#e9be5c", CREAM = "#f5ebd0";
 const GRADE = "contrast(1.05) saturate(0.92) brightness(0.985)";
 export type Aspect = "16x9" | "9x16";
@@ -22,6 +33,7 @@ export class Compositor {
   onTick: (t: number) => void = () => {};
   onEnded: () => void = () => {};
   onBlocked: () => void = () => {};
+  private onFontReady = () => { this.dirty = true; };
   private ctx: CanvasRenderingContext2D;
   private pool: Slot[] = [];
   private frameNo = 0;
@@ -269,26 +281,27 @@ export class Compositor {
   private lyric(doc: Doc, l: Line, t: number, k: number, v: boolean) {
     const { ctx, canvas: { width: W, height: H } } = this, st = doc.subs;
     const px = (v ? 64 : 54) * k * st.scale, stroke = st.outline * 1.7 * k;
+    const lf = lyricFont(st.font, () => this.onFontReady?.()), LF = `${lf.weight} ${px}px ${lf.stack}`;
     const y = st.position === "bottom" ? H - (v ? 400 : 70) * k : st.position === "middle" ? H / 2 + px * 0.35 : H * 0.08 + px;
     const draw = (s: string, x: number, fill: string, withStroke: boolean) => {
-      ctx.font = `700 ${px}px ${FONT}`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.font = LF; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
       if (withStroke && stroke > 0) { ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = st.outline_color; ctx.strokeText(s, x, y); }
       ctx.fillStyle = fill; ctx.fillText(s, x, y);
     };
     if (!st.karaoke) {
-      ctx.font = `700 ${px}px ${FONT}`;
+      ctx.font = LF;
       draw(l.text, W / 2 - ctx.measureText(l.text).width / 2, st.color, true);
       return;
     }
     const spans = sweepWords(l.text, l.start, l.end);
     const full = spans.map(x => x.word).join(" ");
-    ctx.font = `700 ${px}px ${FONT}`;
+    ctx.font = LF;
     const x0 = W / 2 - ctx.measureText(full).width / 2;
     draw(full, x0, st.color, true);
     let sungTo = x0;                                           // x where the sung colour reaches
     let before = "";
     for (const sp of spans) {
-      ctx.font = `700 ${px}px ${FONT}`;
+      ctx.font = LF;
       const xs = x0 + ctx.measureText(before).width, wd = ctx.measureText(sp.word).width;
       const f = clamp((t - sp.a) / Math.max(1e-6, sp.b - sp.a), 0, 1);
       if (f > 0) sungTo = xs + wd * f;
