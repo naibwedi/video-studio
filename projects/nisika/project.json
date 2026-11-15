@@ -1,0 +1,352 @@
+{
+ "title": "ንስኻ",
+ "audio": "audio/nisika-trim.wav",
+ "sizes": [
+  "16x9",
+  "9x16"
+ ],
+ "subtitles": {
+  "lines": [
+   {
+    "text": "ንስኻ ዘይትላብያ ነፍሲ",
+    "start": 16.36,
+    "end": 21.16
+   },
+   {
+    "text": "ንስኻ ዘይለኻላ ነፍሲ",
+    "start": 21.6,
+    "end": 25.34
+   },
+   {
+    "text": "ንስኻ ዘይትህልዋ ነፍሲ",
+    "start": 26.7,
+    "end": 30.86
+   },
+   {
+    "text": "ንስኻ ዘይመርካያ ነፍሲ",
+    "start": 31.84,
+    "end": 35.74
+   },
+   {
+    "text": "መዓስትሓልፎ ናይ ማዕብላትኖውሲ",
+    "start": 37.02,
+    "end": 41.22
+   },
+   {
+    "text": "መዓስትሰግሩ ትዘርእለይቲ",
+    "start": 42.16,
+    "end": 46.36
+   },
+   {
+    "text": "ንስኻ ዘይትላብያ ነፍሲ",
+    "start": 72.9,
+    "end": 77.8
+   },
+   {
+    "text": "ንስኻ ዘይለኻላ ነፍሲ",
+    "start": 78.12,
+    "end": 81.96
+   },
+   {
+    "text": "ንስኻ ዘይትህልዋ ነፍሲ",
+    "start": 83.28,
+    "end": 88.0
+   },
+   {
+    "text": "ንስኻ ዘይመርካያ ነፍሲ",
+    "start": 88.42,
+    "end": 92.32
+   },
+   {
+    "text": "መዓስትሓልፎ ናይ ማዕብላትኖውሲ",
+    "start": 93.6,
+    "end": 97.76
+   },
+   {
+    "text": "መዓስትሰግሩ ትዘርእለይቲ",
+    "start": 98.74,
+    "end": 103.04
+   }
+  ],
+  "style": {
+   "preset": "gold",
+   "color": "#F5EBD0",
+   "active": "#E9BE5C",
+   "outline": 3.0,
+   "outline_color": "#000000",
+   "scale": 1.0,
+   "position": "bottom",
+   "karaoke": true,
+   "glow": true,
+   "reveal": true
+  }
+ },
+ "overlays": {
+  "logo": {
+   "image": "library/brand/logo.jpg",
+   "in": 3.0,
+   "out": null
+  },
+  "title_card": {
+   "text": "ንስኻ",
+   "subtitle": "ሰብአ ሰገል",
+   "in": 0.8,
+   "out": 6.5
+  },
+  "end_card": {
+   "title": "ንስኻ",
+   "handle": "@ሰብአሰገልThemagis",
+   "tagline": "SUBSCRIBE FOR MORE MEZMUR",
+   "in": 124.0
+  },
+  "popups": [
+   {
+    "at": 56.0,
+    "dur": 5.0,
+    "click": 2.6,
+    "tagline": "Subscribe for more mezmur"
+   }
+  ]
+ },
+ "shots": [
+  {
+   "at": 0.0,
+   "clip": "6032544",
+   "start": 1.0,
+   "pan": 0.5,
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 5.56,
+   "clip": "7304863",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "film",
+   "move": "in"
+  },
+  {
+   "at": 10.75,
+   "clip": "5423432",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dramatic",
+   "move": "in"
+  },
+  {
+   "at": 16.44,
+   "clip": "8720610",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "fadeblack",
+   "look": "dawn",
+   "move": "in"
+  },
+  {
+   "at": 22.18,
+   "clip": "7218304",
+   "start": 2.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 27.3,
+   "clip": "10627048",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "left"
+  },
+  {
+   "at": 33.04,
+   "clip": "8720681",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "film",
+   "move": "right"
+  },
+  {
+   "at": 38.39,
+   "clip": "9465399",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dramatic",
+   "move": "in"
+  },
+  {
+   "at": 44.15,
+   "clip": "8776903",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "up"
+  },
+  {
+   "at": 49.62,
+   "clip": "14090582",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "night",
+   "move": "in"
+  },
+  {
+   "at": 54.75,
+   "clip": "6327827",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "smoothleft",
+   "look": "dawn",
+   "move": "up"
+  },
+  {
+   "at": 60.48,
+   "clip": "8318959",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dramatic",
+   "move": "in"
+  },
+  {
+   "at": 66.2,
+   "clip": "10490303",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 73.05,
+   "clip": "8675021",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "fadeblack",
+   "look": "dawn",
+   "move": "in"
+  },
+  {
+   "at": 78.12,
+   "clip": "7526166",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 83.35,
+   "clip": "19796161",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "film",
+   "move": "left"
+  },
+  {
+   "at": 88.44,
+   "clip": "8720691",
+   "start": 0.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 93.61,
+   "clip": "6655122",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dramatic",
+   "move": "in"
+  },
+  {
+   "at": 98.75,
+   "clip": "14071614",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "night",
+   "move": "out"
+  },
+  {
+   "at": 104.47,
+   "clip": "6860453",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "film",
+   "move": "in"
+  },
+  {
+   "at": 110.19,
+   "clip": "8677058",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dramatic",
+   "move": "in"
+  },
+  {
+   "at": 115.31,
+   "clip": "6962391",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "night",
+   "move": "out"
+  },
+  {
+   "at": 121.07,
+   "clip": "2544526",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
+  },
+  {
+   "at": 126.42,
+   "clip": "11408512",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "dawn",
+   "move": "out"
+  },
+  {
+   "at": 131.02,
+   "clip": "4625481",
+   "start": 1.0,
+   "pan": 0.5,
+   "transition": "dissolve",
+   "look": "night",
+   "move": "out"
+  }
+ ],
+ "fx": {
+  "glow": 0.5,
+  "dust": true,
+  "pulse": 0.04,
+  "flash": [
+   16.4,
+   72.9,
+   104.3
+  ]
+ },
+ "channel": {
+  "name": "ሰብአ ሰገል",
+  "handle": "@ሰብአሰገልThemagis"
+ },
+ "theme": []
+}
