@@ -15,8 +15,8 @@
    },
    {
     "text": "ንጉሰይ ፍሉይ 'ዩ ስራሕካ",
-    "start": 27.58,
-    "end": 32.68
+    "start": 27.55,
+    "end": 32.65
    },
    {
     "text": "ሂወት ከሞ ዘይብለይ ርኢኻ",
@@ -59,7 +59,8 @@
    "position": "bottom",
    "karaoke": true,
    "glow": true,
-   "reveal": true
+   "reveal": true,
+   "font": "ebrima"
   }
  },
  "overlays": {
@@ -94,105 +95,134 @@
    "at": 0.0,
    "clip": "3926075",
    "start": 2.0,
-   "pan": 0.5
+   "pan": 0.5,
+   "look": "dawn",
+   "move": "in"
   },
   {
    "at": 6.18,
    "clip": "8720610",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
   },
   {
    "at": 11.32,
    "clip": "9000011",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "move": "up"
   },
   {
    "at": 16.87,
    "clip": "9000003",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
   },
   {
    "at": 21.2,
    "clip": "4787839",
    "start": 2.0,
    "pan": 0.5,
-   "transition": "fadeblack"
+   "transition": "fadeblack",
+   "look": "dramatic",
+   "move": "in"
   },
   {
    "at": 27.55,
    "clip": "8720681",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "right"
   },
   {
    "at": 33.16,
    "clip": "20750079",
    "start": 1.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "film",
+   "move": "out"
   },
   {
    "at": 38.73,
    "clip": "9000010",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "right"
   },
   {
    "at": 44.3,
    "clip": "20103690",
    "start": 3.0,
    "pan": 0.5,
-   "transition": "smoothleft"
+   "transition": "smoothleft",
+   "look": "dawn",
+   "move": "in"
   },
   {
    "at": 49.88,
    "clip": "9000005",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
   },
   {
    "at": 55.5,
    "clip": "4513831",
    "start": 1.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "night",
+   "move": "in"
   },
   {
    "at": 61.02,
    "clip": "9362165",
    "start": 1.0,
    "pan": 0.5,
-   "transition": "fadeblack"
+   "transition": "fadeblack",
+   "look": "dramatic",
+   "move": "up"
   },
   {
    "at": 66.66,
    "clip": "9000002",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "dawn",
+   "move": "left"
   },
   {
    "at": 72.92,
    "clip": "9000014",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "warm",
+   "move": "in"
   },
   {
    "at": 79.22,
    "clip": "9000018",
    "start": 0.0,
    "pan": 0.5,
-   "transition": "dissolve"
+   "transition": "dissolve",
+   "look": "dawn",
+   "move": "out"
   }
  ],
  "channel": {
